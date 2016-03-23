@@ -16,25 +16,10 @@ function round_sig_digits($number, $sigdigs) {
     return round($number, $sigdigs) * $multiplier;
 }
 
-function bits_to_MB($bits, $sigdigs = false) {
+function bits_to_MB($bits, $sigdigs = null) {
     if (!$bits) return 0;
-    $MB = $bits * BITS_TO_MB;
-    return $sigdigs ? round_sig_digits($MB, $sigdigs) : $MB;
-}
-
-if (!function_exists('json_last_error_msg')) {
-    function json_last_error_msg() {
-        static $errors = array(
-            JSON_ERROR_NONE             => null,
-            JSON_ERROR_DEPTH            => 'Maximum stack depth exceeded',
-            JSON_ERROR_STATE_MISMATCH   => 'Underflow or the modes mismatch',
-            JSON_ERROR_CTRL_CHAR        => 'Unexpected control character found',
-            JSON_ERROR_SYNTAX           => 'Syntax error, malformed JSON',
-            JSON_ERROR_UTF8             => 'Malformed UTF-8 characters, possibly incorrectly encoded'
-        );
-        $error = json_last_error();
-        return array_key_exists($error, $errors) ? $errors[$error] : "Unknown error ({$error})";
-    }
+    $bitsMB = $bits * BITS_TO_MB;
+    return $sigdigs ? round_sig_digits($bitsMB, $sigdigs) : $bitsMB;
 }
 
 function synergycp_ConfigOptions() {
@@ -45,11 +30,11 @@ function synergycp_ConfigOptions() {
 }
 
 
-function array_get($array, $key, $default = false) {
+function array_get($array, $key, $default = null) {
     return empty($array[$key]) ? $default : $array[$key];
 }
 
-function array_pick($array, $keys, $default = false) {
+function array_pick($array, $keys, $default = null) {
     foreach ($keys as $key)
         if (!empty($array[$key]))
             return $array[$key];
@@ -74,39 +59,9 @@ function get_url($params) {
         . "integration.php?api_key=$api_key";
 }
 
-function get_response($post, $params) {
-    $ch = curl_init();
-    curl_setopt_array($ch, array(
-        CURLOPT_URL => get_url($params),
-        CURLOPT_POST => count($post),
-        CURLOPT_POSTFIELDS => http_build_query($post),
-        CURLOPT_RETURNTRANSFER => 1,
-    ));
-
-    $result = curl_exec($ch);
-    if (curl_errno($ch)) {
-        print "Synergy CP API Request Error: " . curl_error($ch);
-        return "";
-    }
-    curl_close($ch);
-
-    $resp = json_decode($result);
-    if (!$resp)
-        return "JSON Parse Error: " . json_last_error_msg();
-
-    if (!empty($resp->msgs))
-        foreach ($resp->msgs as $msg)
-            if ($msg->cat == 'danger')
-                return $msg->text;
-
-    if (empty($resp->result))
-        $resp->result = "success";
-    return $resp;
-}
-
 function synergycp_CreateAccount($params) {
     $choices = $params['configoptions'];
-    $os = $choices['Operating System'];
+    $osChoice = $choices['Operating System'];
     $ram = $choices['Memory'];
     $hdds = array();
     for ($i = 1; $i <= 8; $i++) {
@@ -133,7 +88,7 @@ function synergycp_CreateAccount($params) {
         'ram' => $ram,
         'cpu' => $cpu,
         'hdds' => $hdds,
-        'pxe_script' => $os,
+        'pxe_script' => $osChoice,
         'port_speed' => $port_speed,
         'billing_id' => $params['serviceid'],
     ), $params);
@@ -160,11 +115,11 @@ function synergycp_CreateAccount($params) {
 
 function _synergycp_GetConfigOptions($params) {
     $results = array();
-    $q="SELECT optval.optionname AS val, opt.optionname AS name
+    $query="SELECT optval.optionname AS val, opt.optionname AS name
         FROM tblproductconfigoptionssub optval
         JOIN tblproductconfigoptions opt ON opt.id = optval.configid
         JOIN tblproducts p ON (p.id = '$params[pid]' AND p.gid = opt.gid)";
-    $query = mysql_query($q);
+    $query = mysql_query($query);
     while ($result = mysql_fetch_array($query)) {
         $name = $result['name'];
         list($billing_id, $value) = explode('|', $result['val']);
@@ -209,9 +164,6 @@ function synergycp_ClientAreaCustomButtonArray() {
 }
 
 function synergycp_btn_manage($params) {
-    //print_r($params);
-    //die('');
-
     // Get autologin URL
     $resp = get_response(array(
         'page' => 'client:login_url',
@@ -219,16 +171,19 @@ function synergycp_btn_manage($params) {
         'server_id' => $params['serviceid'],
     ), $params);
 
-    if (!is_object($resp))
+    if (!is_object($resp)) {
         die($resp);
+    }
 
     header("Location: $resp->result");
     die('Transfer to <a href="' . $resp->result . '">SynergyCP</a>.');
 }
 
 function synergycp_UsageUpdate($params) {
-    $serverip = $params['serverip'];
-    $access_key = $params['serveraccesshash'];
+    /*
+    $serverIp = $params['serverip'];
+    $accessKey = $params['serveraccesshash'];
+    */
 
     // Get bandwidth from SynergyCP
     $resp = get_response(array(
