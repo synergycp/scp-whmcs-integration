@@ -6,5 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Scp\\Whmcs\\' => array($baseDir . '/src'),
     'Scp\\' => array($baseDir . '/Scp'),
 );

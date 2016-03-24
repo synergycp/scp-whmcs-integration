@@ -13,7 +13,8 @@
 		"classmap": [
 		],
 		"psr-4": {
-			"Scp\\": "Scp"
+			"Scp\\": "Scp",
+            "Scp\\Whmcs\\": "src"
 		}
 	},
 	"autoload-dev": {
