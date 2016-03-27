@@ -11,8 +11,8 @@ class AppTest extends TestCase
 
     public function testGet()
     {
-        $app = App::get();
-        $app2 = App::get();
+        $app = $this->app();
+        $app2 = $this->app();
 
         $this->assertEquals($app, $app2);
     }
@@ -47,14 +47,6 @@ class AppTest extends TestCase
         $instance = $app->make($className);
         $this->assertEquals($obj, $instance);
         $this->assertEquals(1, $this->counter);
-    }
-
-    /**
-     * @return App
-     */
-    private function newApp()
-    {
-        return new App;
     }
 
     /**

@@ -11,6 +11,11 @@ namespace Scp\Api;
 class Api
 {
     /**
+     * @var Api
+     */
+    protected static $instance;
+
+    /**
      * @var string
      */
     protected $url;
@@ -24,6 +29,8 @@ class Api
     {
         $this->url = $url;
         $this->apiKey = $apiKey;
+
+        static::instance($this);
     }
 
     /**
@@ -125,5 +132,10 @@ class Api
     public function url($path = '')
     {
         return "$this->url/$path?key=$this->apiKey";
+    }
+
+    public static function instance($instance = null)
+    {
+        return static::$instance = $instance ?: static::$instance;
     }
 }

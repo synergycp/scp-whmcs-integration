@@ -6,24 +6,41 @@ use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
 use Scp\Whmcs\App;
 use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Whmcs\Whmcs;
+use Scp\Client\Client;
+use Scp\Client\ClientRepository;
 
 class ServerProvisioner
 {
+    /**
+     * @var Whmcs
+     */
+    protected $whmcs;
+
+    /**
+     * @var ClientRepository
+     */
+    protected $clients;
+
     /**
      * @var TicketManager
      */
     protected $tickets;
 
     /**
-     * @var Whmcs
+     * @var OriginalServerProvisioner
      */
-    protected $whmcs;
+    protected $provision;
 
-    public function __construct()
-    {
-        $app = App::get();
-        $this->tickets = $app->resolve(TicketManager::class);
-        $this->whmcs = $app->resolve(Whmcs::class);
+    public function __construct(
+        Whmcs $whmcs,
+        TicketManager $tickets,
+        ClientRepository $clients,
+        OriginalServerProvisioner $provision
+    ) {
+        $this->whmcs = $whmcs;
+        $this->clients = $clients;
+        $this->tickets = $tickets;
+        $this->provision = $provision;
     }
 
     /**
@@ -36,43 +53,44 @@ class ServerProvisioner
         $choices = $params['configoptions'];
         $osChoice = $choices['Operating System'];
         $ram = $choices['Memory'];
-        $hdds = array();
+        $hdds = [];
+
         for ($i = 1; $i <= 8; $i++) {
             $key = "SSD Bay $i";
-            if (!empty($choices[$key]) && $choices[$key] != 'None')
+            if (!empty($choices[$key]) && $choices[$key] != 'None') {
                 $hdds[] = $choices[$key];
+            }
         }
+
         $hdds = ';' . implode(';', $hdds) . ';';
-        $port_speed = $choices['Port Speed'];
+        $portSpeed = $choices['Port Speed'];
         $ips = $choices['IPv4 Addresses'];
         $cpu = $params['configoption1'];
 
-        $resp = get_response(array(
-            'page' => 'server:create',
+        $client = $this->clients->create([
+            'email' => $params['clientsdetails']['email'],
+            'first' => $params['clientsdetails']['firstname'],
+            'last' => $params['clientsdetails']['lastname'],
+            'billing_id' => $params['userid'],
+        ]);
 
-            // Client information
-            'user_email' => $params['clientsdetails']['email'],
-            'user_first' => $params['clientsdetails']['firstname'],
-            'user_last' => $params['clientsdetails']['lastname'],
-            'user_id' => $params['userid'],
-
-            // Provisioning Information
+        $server = $this->provision->server([
             'ips' => $ips,
             'ram' => $ram,
             'cpu' => $cpu,
             'hdds' => $hdds,
             'pxe_script' => $osChoice,
-            'port_speed' => $port_speed,
+            'port_speed' => $portSpeed,
             'billing_id' => $params['serviceid'],
-        ), $params);
+        ], $client);
 
-        if (!is_object($resp)) {
+        if (!$server) {
             $this->createTicket($params);
 
             return false;
         }
 
-        return $resp->result;
+        return $server;
     }
 
     private function createTicket(array $params)
@@ -82,14 +100,15 @@ class ServerProvisioner
             $params['serviceid']
         );
 
-        $config_opts = $this->whmcs->configOptions();
-        foreach ($params['configoptions'] as $opt_name => $billing_val)
-            $message .= "$opt_name: {$config_opts[$opt_name][$billing_val]}\n";
+        $configOpts = $this->whmcs->configOptions();
+        foreach ($params['configoptions'] as $optName => $billingVal) {
+            $message .= "$optName: {$configOpts[$optName][$billingVal]}\n";
+        }
 
-        $this->tickets->createAndLogErrors(array(
+        $this->tickets->createAndLogErrors([
             'clientid' => $params['userid'],
             'subject' => 'Server provisioning request',
             'message' => $message,
-        ));
+        ]);
     }
 }
