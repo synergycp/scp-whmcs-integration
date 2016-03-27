@@ -34,6 +34,11 @@ abstract class ApiModel
         return $this->exists;
     }
 
+    public function getId()
+    {
+        return $this->id;
+    }
+
     public function setExists($exists)
     {
         $this->exists = $exists;
@@ -74,6 +79,11 @@ abstract class ApiModel
     }
 
     public function __get($attribute)
+    {
+        return $this->getAttribute($attribute);
+    }
+
+    public function getAttribute($attribute)
     {
         return Arr::get($this->attributes, $attribute);
     }

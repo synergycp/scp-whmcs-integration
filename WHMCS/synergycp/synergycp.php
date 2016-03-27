@@ -1,10 +1,14 @@
 <?php
 
+use Scp\Api\ApiKey;
+use Scp\Api\ApiSingleSignOn;
 use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Ticket\TicketCreationFailed;
 use Scp\Whmcs\App;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
+use Scp\Whmcs\Client\ClientService;
+use Scp\Server\ServerRepository;
 
 if (!defined('WHMCS')) {
     die("This file cannot be accessed directly.");
@@ -33,32 +37,41 @@ function synergycp_LoginLink($params) {
 }
 
 //Custom button array that allows users to interact with specified buttons below in client area.
-function synergycp_ClientAreaCustomButtonArray() {
-    return array(
+function synergycp_ClientAreaCustomButtonArray($params) {
+    return [
         "Manage on SynergyCP" => "btn_manage",
-    );
+    ];
 }
 
 function synergycp_btn_manage($params) {
-    // Get autologin URL
-    $resp = get_response(array(
-        'page' => 'client:login_url',
-        'user_id' => $params['clientsdetails']['userid'],
-        'server_id' => $params['serviceid'],
-    ), $params);
+    $client = _synergycp_app($params)
+        ->resolve(ClientService::class)
+        ->getOrCreate();
+    $server = _synergycp_app()
+        ->resolve(ServerRepository::class)
+        ->findByBillingId($params['serviceid']);
 
-    if (!is_object($resp)) {
-        die($resp);
+    $apiKey = with(new ApiKey)->owner($client)->save();
+
+    $sso = new ApiSingleSignOn($apiKey);
+
+    if ($server) {
+        $sso->view($server);
     }
 
-    header("Location: $resp->result");
-    die('Transfer to <a href="' . $resp->result . '">SynergyCP</a>.');
+    $url = $sso->url();
+
+    header("Location: $url");
+    die(sprintf(
+        'Transfer to <a href="%s">SynergyCP</a>.',
+        $url
+    ));
 }
 
 function synergycp_UsageUpdate($params) {
     $usage = _synergycp_app()->resolve(UsageUpdater::class);
 
-    return $usage->runAndLogErrors();
+    return $usage->runAndLogErrors() ? "success" : "Error running usage update";
 }
 
 ?>

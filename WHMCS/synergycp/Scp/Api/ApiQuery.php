@@ -2,17 +2,18 @@
 
 namespace Scp\Api;
 use Scp\Support\Collection;
+use Scp\Api\ApiModel;
 
-abstract class ApiQuery
+class ApiQuery
 {
     /**
-     * @var Api
+     * @var ApiModel
      */
-    protected $api;
+    protected $model;
 
-    public function __construct(Api $api)
+    public function __construct(ApiModel $model)
     {
-        $this->api = $api;
+        $this->model = $model;
     }
 
     /**
@@ -23,7 +24,12 @@ abstract class ApiQuery
      */
     public function chunk($count, \Closure $callback)
     {
-        
+        $page = 1;
+        while ($page) {
+            $items = $this->get($count, $page);
+            $items->each($callback);
+            $page = $items->nextPage();
+        }
     }
 
     public function all()
@@ -37,7 +43,7 @@ abstract class ApiQuery
 
     public function get($count = 100, $page = 1)
     {
-
+        return new ApiPaginator;
     }
 
     public function each(\Closure $callback)
