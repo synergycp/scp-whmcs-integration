@@ -1,0 +1,37 @@
+{
+	"name": "cabloo/scp-integration-whmcs",
+	"description": "Synergy Control Panel WHMCS",
+	"keywords": ["Synergy", "Server", "Control", "Panel", "Dedicated"],
+	"license": "none",
+	"type": "project",
+	"require": {
+	},
+	"require-dev": {
+		"mockery/mockery": "^0.9.4"
+	},
+	"repositories": [],
+	"autoload": {
+		"classmap": [
+		],
+		"psr-4": {
+			"Scp\\": "Scp",
+            "Scp\\Whmcs\\": "src"
+		}
+	},
+	"autoload-dev": {
+		"classmap": [
+			"tests/TestCase.php"
+		]
+	},
+	"scripts": {
+		"post-install-cmd": [
+		],
+		"post-update-cmd": [
+		],
+		"post-create-project-cmd": [
+		]
+	},
+	"config": {
+		"preferred-install": "dist"
+	}
+}
