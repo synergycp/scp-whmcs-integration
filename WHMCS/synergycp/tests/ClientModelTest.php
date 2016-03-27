@@ -8,22 +8,24 @@ class ClientModelTest extends TestCase
     /**
      * @param  array  $info
      *
-     * @dataProvider dataSave
+     * @dataProvider dataCreate
      */
-    public function testSave(array $info)
+    public function testCreate(array $info, array $expectedInfo)
     {
         $api = Mockery::mock(Api::class);
+        $api->shouldReceive('post')
+            ->with('client/', $expectedInfo);
         $client = new Client($info, $api);
         $client->save();
     }
 
-    public function dataSave()
+    public function dataCreate()
     {
         return [
             [
-                [
-                    $testKey = 'test' => $testValue = 'Test',
-                ],
+                $data = [
+                    'test' => 'Test',
+                ], $data,
             ],
         ];
     }
