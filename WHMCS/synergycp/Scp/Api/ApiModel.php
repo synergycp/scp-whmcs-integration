@@ -29,9 +29,22 @@ abstract class ApiModel
 
     abstract public function path();
 
+    /**
+     * @return Api
+     */
+    public function api()
+    {
+        return $this->api;
+    }
+
     public function exists()
     {
         return $this->exists;
+    }
+
+    public function getId()
+    {
+        return $this->id;
     }
 
     public function setExists($exists)
@@ -74,6 +87,11 @@ abstract class ApiModel
     }
 
     public function __get($attribute)
+    {
+        return $this->getAttribute($attribute);
+    }
+
+    public function getAttribute($attribute)
     {
         return Arr::get($this->attributes, $attribute);
     }

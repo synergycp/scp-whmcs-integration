@@ -3,11 +3,10 @@
 namespace Scp\Whmcs\Server\Provision;
 
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
-use Scp\Whmcs\App;
 use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Whmcs\Whmcs;
+use Scp\Whmcs\Client\ClientService;
 use Scp\Client\Client;
-use Scp\Client\ClientRepository;
 
 class ServerProvisioner
 {
@@ -17,9 +16,9 @@ class ServerProvisioner
     protected $whmcs;
 
     /**
-     * @var ClientRepository
+     * @var ClientService
      */
-    protected $clients;
+    protected $client;
 
     /**
      * @var TicketManager
@@ -33,20 +32,20 @@ class ServerProvisioner
 
     public function __construct(
         Whmcs $whmcs,
+        ClientService $client,
         TicketManager $tickets,
-        ClientRepository $clients,
         OriginalServerProvisioner $provision
     ) {
         $this->whmcs = $whmcs;
-        $this->clients = $clients;
+        $this->client = $client;
         $this->tickets = $tickets;
         $this->provision = $provision;
     }
 
     /**
-     * @param  array  $params
+     * @param array $params
      *
-     * @return OriginalServerProvisioner
+     * @return Server|null
      */
     public function create(array $params)
     {
@@ -55,24 +54,20 @@ class ServerProvisioner
         $ram = $choices['Memory'];
         $hdds = [];
 
-        for ($i = 1; $i <= 8; $i++) {
+        for ($i = 1; $i <= 8; ++$i) {
             $key = "SSD Bay $i";
+
             if (!empty($choices[$key]) && $choices[$key] != 'None') {
                 $hdds[] = $choices[$key];
             }
         }
 
-        $hdds = ';' . implode(';', $hdds) . ';';
+        $hdds = ';'.implode(';', $hdds).';';
         $portSpeed = $choices['Port Speed'];
         $ips = $choices['IPv4 Addresses'];
         $cpu = $params['configoption1'];
 
-        $client = $this->clients->create([
-            'email' => $params['clientsdetails']['email'],
-            'first' => $params['clientsdetails']['firstname'],
-            'last' => $params['clientsdetails']['lastname'],
-            'billing_id' => $params['userid'],
-        ]);
+        $client = $this->client->getOrCreate();
 
         $server = $this->provision->server([
             'ips' => $ips,
@@ -87,7 +82,7 @@ class ServerProvisioner
         if (!$server) {
             $this->createTicket($params);
 
-            return false;
+            return;
         }
 
         return $server;
