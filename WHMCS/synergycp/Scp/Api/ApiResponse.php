@@ -4,6 +4,16 @@ namespace Scp\Api;
 
 class ApiResponse
 {
+    /**
+     * @var string
+     */
+    protected $body;
+
+    public function __construct($body)
+    {
+        $this->body = $body;
+    }
+
     private function jsonError()
     {
         static $errors = array(
@@ -22,8 +32,6 @@ class ApiResponse
 
     public function data()
     {
-
-
         $resp = json_decode($this->body);
         if (!$resp) {
             $this->jsonError();
@@ -36,6 +44,7 @@ class ApiResponse
 
         if (empty($resp->result))
             $resp->result = "success";
-        return $resp;
+
+        return $resp->data;
     }
 }

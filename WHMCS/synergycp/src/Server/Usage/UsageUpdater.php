@@ -17,14 +17,14 @@ class UsageUpdater
     protected $log;
 
     /**
-     * @var ServerRepository
-     */
-    protected $servers;
-
-    /**
      * @var UsageFormatter
      */
     protected $format;
+
+    /**
+     * @var ServerRepository
+     */
+    protected $servers;
 
     /**
      * @var Database

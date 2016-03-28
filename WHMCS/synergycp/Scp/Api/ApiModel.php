@@ -29,6 +29,14 @@ abstract class ApiModel
 
     abstract public function path();
 
+    /**
+     * @return Api
+     */
+    public function api()
+    {
+        return $this->api;
+    }
+
     public function exists()
     {
         return $this->exists;

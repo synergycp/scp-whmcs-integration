@@ -3,6 +3,7 @@
 namespace Scp\Api;
 use Scp\Support\Collection;
 use Scp\Api\ApiModel;
+use Scp\Api\Pagination\ApiPaginator;
 
 class ApiQuery
 {
@@ -11,9 +12,37 @@ class ApiQuery
      */
     protected $model;
 
+    /**
+     * @var array
+     */
+    protected $filters = [];
+
     public function __construct(ApiModel $model)
     {
         $this->model = $model;
+    }
+
+    /**
+     * @return ApiModel
+     */
+    public function model()
+    {
+        return $this->model;
+    }
+
+    /**
+     * @return array
+     */
+    public function filters()
+    {
+        return $this->filters;
+    }
+
+    public function where($key, $value = null)
+    {
+        $this->filters[$key] = $value;
+
+        return $this;
     }
 
     /**
@@ -24,11 +53,10 @@ class ApiQuery
      */
     public function chunk($count, \Closure $callback)
     {
-        $page = 1;
+        $page = $this->get($count);
         while ($page) {
-            $items = $this->get($count, $page);
-            $items->each($callback);
-            $page = $items->nextPage();
+            $callback($page);
+            $page = $page->nextPage();
         }
     }
 
@@ -43,13 +71,13 @@ class ApiQuery
 
     public function get($count = 100, $page = 1)
     {
-        return new ApiPaginator;
+        return new ApiPaginator($this, $count, $page);
     }
 
     public function each(\Closure $callback)
     {
-        $this->chunk(1000, function (QueryResults $result) {
-            $result->each(function ($item) {
+        $this->chunk(1000, function (ApiPaginator $page) use ($callback) {
+            $page->each(function ($item) use ($callback) {
                 $callback($item);
             });
         });
