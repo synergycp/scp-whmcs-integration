@@ -1,11 +1,10 @@
 <?php
 
 namespace Scp\Whmcs\Server\Usage;
+
 use Scp\Api\ApiError;
 use Scp\Server\Server;
-use Scp\Server\ServerQuery;
 use Scp\Server\ServerRepository;
-use Scp\Whmcs\Server\Usage\UsageFormatter;
 use Scp\Whmcs\LogFactory;
 use Scp\Whmcs\Database\Database;
 
@@ -80,8 +79,8 @@ class UsageUpdater
 
             $updates = $this->prepareUpdates($server);
 
-            $this->database->update("tblhosting", $updates, [
-                "id" => $server->billing_id,
+            $this->database->update('tblhosting', $updates, [
+                'id' => $server->billing_id,
             ]);
         });
 
@@ -95,9 +94,9 @@ class UsageUpdater
         return [
             //"diskused" => $values['diskusage'],
             //"dislimit" => $values['disklimit'],
-            "bwusage" => $this->format->bitsToMB($server->bandwidth_used),
-            "bwlimit" => $this->format->bitsToMB($server->bandwidth_limit, 3),
-            "lastupdate" => "now()",
+            'bwusage' => $this->format->bitsToMB($server->bandwidth_used),
+            'bwlimit' => $this->format->bitsToMB($server->bandwidth_limit, 3),
+            'lastupdate' => 'now()',
         ];
     }
 }

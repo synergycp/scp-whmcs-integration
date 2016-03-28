@@ -1,7 +1,6 @@
 <?php
 
 use Scp\Client\Client;
-use Scp\Client\ClientRepository;
 use Scp\Api\Api;
 
 class ClientModelTest extends TestCase
@@ -12,7 +11,7 @@ class ClientModelTest extends TestCase
     }
 
     /**
-     * @param  array  $info
+     * @param array $info
      *
      * @dataProvider dataCreate
      */

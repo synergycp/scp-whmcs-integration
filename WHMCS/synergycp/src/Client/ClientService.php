@@ -1,6 +1,7 @@
 <?php
 
 namespace Scp\Whmcs\Client;
+
 use Scp\Client\ClientRepository;
 use Scp\Whmcs\Whmcs\Whmcs;
 

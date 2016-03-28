@@ -13,8 +13,8 @@ class ApiQueryTest extends TestCase
     }
 
     /**
-     * @param  array  $where
-     * @param  array  $expectedFilters
+     * @param array $where
+     * @param array $expectedFilters
      *
      * @dataProvider dataFilters
      */
@@ -71,14 +71,15 @@ class ApiQueryTest extends TestCase
         $perPage = 20;
         $responseData = function () use (&$curr, $items, $lastPageNumber, $total, $perPage) {
             $data = $items;
+
             return (object) [
                 'current_page' => $curr,
                 'data' => $data,
                 'from' => 1,
                 'last_page' => $lastPageNumber,
-                'next_page_url' => $curr == $lastPageNumber ? null : '/srv/test?page='.($curr+1),
+                'next_page_url' => $curr == $lastPageNumber ? null : '/srv/test?page='.($curr + 1),
                 'per_page' => $perPage,
-                'prev_page_url' => $curr == 1 ? null : '/srv/test?page='.($curr-1),
+                'prev_page_url' => $curr == 1 ? null : '/srv/test?page='.($curr - 1),
                 'to' => $perPage,
                 'total' => $total,
             ];

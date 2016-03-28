@@ -1,5 +1,5 @@
 <?php
-use Scp\Whmcs\App;
+
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Ticket\TicketManager;
@@ -11,8 +11,8 @@ use Scp\Client\Client;
 class ServerProvisionerTest extends TestCase
 {
     /**
-     * @param  array  $input
-     * @param  array  $serverInfo
+     * @param array $input
+     * @param array $serverInfo
      *
      * @dataProvider dataProvision
      */
@@ -61,14 +61,14 @@ class ServerProvisionerTest extends TestCase
                     'pxe_script' => $osChoice,
                     'port_speed' => $portSpeed,
                     'billing_id' => $billingId,
-                ]
+                ],
             ],
         ];
     }
 
     /**
-     * @param  array  $input
-     * @param  array  $whmcsConfig
+     * @param array $input
+     * @param array $whmcsConfig
      *
      * @dataProvider dataProvisionTicket
      */
@@ -131,7 +131,7 @@ $memLabel: $memName
 $portLabel: $portName
 $ipLabel: $ipName
 ",
-                ]
+                ],
             ],
         ];
     }

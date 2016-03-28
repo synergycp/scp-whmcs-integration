@@ -6,7 +6,6 @@ class AppTest extends TestCase
 {
     public function setUp()
     {
-
     }
 
     public function testGet()
@@ -34,7 +33,8 @@ class AppTest extends TestCase
         $this->counter = 0;
         $obj = $this->randomObject();
         $singleton = function () use ($obj) {
-            $this->counter++;
+            ++$this->counter;
+
             return $obj;
         };
         $app->singleton($className, $singleton);
@@ -54,7 +54,7 @@ class AppTest extends TestCase
      */
     private function randomObject()
     {
-        $obj = new stdClass;
+        $obj = new stdClass();
         $obj->test = rand();
 
         return $obj;

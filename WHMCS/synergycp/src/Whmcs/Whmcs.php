@@ -15,7 +15,11 @@ class Whmcs
     public function configForm()
     {
         $configarray = [
-            "CPU Billing ID" => ["Type"=>"text", "Size"=>"50", "Description"=>""],
+            'CPU Billing ID' => [
+                'Type' => 'text',
+                'Size' => '50',
+                'Description' => '',
+            ],
         ];
 
         return $configarray;
@@ -29,7 +33,7 @@ class Whmcs
         $params = $this->getParams();
         $results = [];
 
-        $query="SELECT optval.optionname AS val, opt.optionname AS name
+        $query = "SELECT optval.optionname AS val, opt.optionname AS name
             FROM tblproductconfigoptionssub optval
             JOIN tblproductconfigoptions opt ON opt.id = optval.configid
             JOIN tblproducts p ON (p.id = '$params[pid]' AND p.gid = opt.gid)";

@@ -18,17 +18,17 @@ class UsageFormatterTest extends TestCase
     {
         $this->assertEquals(
             $this->format->bitsToMB(1000),
-            1/8000
+            1 / 8000
         );
 
         $this->assertEquals(
-            $this->format->bitsToMB(1000*1000),
-            1/8
+            $this->format->bitsToMB(1000 * 1000),
+            1 / 8
         );
 
         $this->assertEquals(
-            $this->format->bitsToMB(1000*1000*1000),
-            1000/8
+            $this->format->bitsToMB(1000 * 1000 * 1000),
+            1000 / 8
         );
     }
 

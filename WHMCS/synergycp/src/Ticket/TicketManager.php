@@ -7,17 +7,18 @@ class TicketManager
     /**
      * @var array
      */
-    protected $defaults = array(
-        'deptid' => "1",
-        'priority' => "Low",
+    protected $defaults = [
+        'deptid' => '1',
+        'priority' => 'Low',
     //  'clientid' => $client,
     //  'subject' => "Testing Tickets",
     //  'message' => "This is a sample ticket opened by the API as a client",
     //  'customfields' => base64_encode(serialize(array("8"=>"mydomain.com"))),
-    );
+    ];
 
     /**
-     * @param  array $values
+     * @param array $values
+     *
      * @return array the localAPI resulting call.
      *
      * @throws TicketCreationFailed
@@ -26,7 +27,7 @@ class TicketManager
     {
         $values = array_merge($this->defaults, $values);
 
-        $results = localAPI("openticket", $values, "admin");
+        $results = localAPI('openticket', $values, 'admin');
         if ($results['result'] != 'success') {
             throw new TicketCreationFailed();
         }
@@ -35,7 +36,7 @@ class TicketManager
     }
 
     /**
-     * @param  array  $values
+     * @param array $values
      *
      * @return bool
      */
@@ -43,9 +44,11 @@ class TicketManager
     {
         try {
             $this->create($values);
+
             return true;
         } catch (TicketCreationFailed $exc) {
-            logActivity('SynergyCP: Ticket creation failed ' . $exc->getMessage());
+            logActivity('SynergyCP: Ticket creation failed '.$exc->getMessage());
+
             return false;
         }
     }
