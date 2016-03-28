@@ -40,6 +40,9 @@ abstract class ApiRepository
         return with(new $this->class)->path();
     }
 
+    /**
+     * @return ApiQuery
+     */
     public function query()
     {
         return new ApiQuery($this->make());

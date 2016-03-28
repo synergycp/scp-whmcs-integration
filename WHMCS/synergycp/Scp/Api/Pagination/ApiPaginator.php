@@ -26,7 +26,7 @@ class ApiPaginator
     /**
      * @var int
      */
-    protected $lastPage;
+    protected $lastPageNumber;
 
     /**
      * @var int
@@ -56,9 +56,10 @@ class ApiPaginator
     {
         $model = $this->query->model();
         $api = $model->api();
+        $pageData = $this->pageData();
         $response = $api->get(
             $model->path(),
-            $this->query->filters()
+            $pageData + $this->query->filters()
         );
 
         $data = $response->data();
@@ -68,10 +69,18 @@ class ApiPaginator
             return new Server((array) $item, $api);
         });
         $this->page = $data->current_page;
-        $this->lastPage = $data->last_page;
+        $this->lastPageNumber = $data->last_page;
         $this->total = $data->total;
 
         return $this;
+    }
+
+    private function pageData()
+    {
+        return [
+            'page' => $this->page,
+            'per_page' => $this->perPage,
+        ];
     }
 
     public function page()
@@ -133,9 +142,15 @@ class ApiPaginator
     /**
      * @return int
      */
-    public function lastPage()
+    public function lastPageNumber()
     {
-        return $this->lastPage;
+        $this->items();
+        return $this->lastPageNumber;
+    }
+
+    public function perPage()
+    {
+        return $this->perPage;
     }
 
     /**
@@ -144,7 +159,7 @@ class ApiPaginator
     public function nextPageNumber()
     {
         $page = $this->page();
-        if ($page == $this->lastPage()) {
+        if ($page == $this->lastPageNumber()) {
             return;
         }
 
@@ -152,7 +167,7 @@ class ApiPaginator
     }
 
     /**
-     * @return static|null
+     * @return ApiPaginator|null
      */
     public function nextPage()
     {

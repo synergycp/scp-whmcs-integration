@@ -13,9 +13,6 @@ class ServerRepository extends ApiRepository
 
     public function findByBillingId($billingId)
     {
-        $result = $this->api->get($this->path(), [
-            'billing_id' => $billingId,
-        ]);
-        print_r($result);
+        return $this->query()->where('billing_id', $billingId)->first();
     }
 }

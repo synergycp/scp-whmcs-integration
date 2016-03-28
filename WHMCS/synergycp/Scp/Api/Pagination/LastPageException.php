@@ -2,6 +2,6 @@
 
 namespace Scp\Api\Pagination;
 
-class LastPageException extends \Exception
+class lastPageNumberException extends \Exception
 {
 }
