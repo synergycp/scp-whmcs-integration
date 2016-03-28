@@ -8,9 +8,9 @@ use Scp\Support\Arr;
 
 class Api extends OriginalApi
 {
-    public function __construct()
-    {
-        $whmcs = App::get()->resolve(Whmcs::class);
+    public function __construct(
+        Whmcs $whmcs
+    ) {
         $params = $whmcs->getParams();
         $apiKey = Arr::get($params, 'serveraccesshash');
         $hostname = Arr::get($params, 'serverhostname');

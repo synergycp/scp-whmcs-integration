@@ -16,26 +16,38 @@ class ApiResponse
 
     private function jsonError()
     {
-        static $errors = array(
+        static $errors = [
             JSON_ERROR_NONE             => null,
             JSON_ERROR_DEPTH            => 'Maximum stack depth exceeded',
             JSON_ERROR_STATE_MISMATCH   => 'Underflow or the modes mismatch',
             JSON_ERROR_CTRL_CHAR        => 'Unexpected control character found',
             JSON_ERROR_SYNTAX           => 'Syntax error, malformed JSON',
             JSON_ERROR_UTF8             => 'Malformed UTF-8 characters, possibly incorrectly encoded'
-        );
+        ];
         $error = json_last_error();
         if (array_key_exists($error, $errors)) {
-            throw new JsonDecodingError($errors[$error]);
+            throw new JsonDecodingError($errors[$error], $this->body);
         }
     }
 
-    public function data()
+    /**
+     * @return stdObject
+     *
+     * @throws JsonDecodingError
+     */
+    public function raw()
     {
         $resp = json_decode($this->body);
         if (!$resp) {
             $this->jsonError();
         }
+
+        return $resp;
+    }
+
+    public function data()
+    {
+        $resp = $this->raw();
 
         if (!empty($resp->msgs))
             foreach ($resp->msgs as $msg)

@@ -27,7 +27,7 @@ class Api
 
     public function __construct($url, $apiKey)
     {
-        $this->url = $url;
+        $this->url = rtrim($url, '/');
         $this->apiKey = $apiKey;
 
         static::instance($this);

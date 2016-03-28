@@ -59,7 +59,6 @@ class ApiQueryTest extends TestCase
 
     public function testPagination()
     {
-        // $this->servers->shouldReceive('make')->passthru();
         $curr = 1;
         $items = [
             (object) [
