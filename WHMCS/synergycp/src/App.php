@@ -3,7 +3,6 @@
 namespace Scp\Whmcs;
 
 use Closure;
-use Scp\Api\Api;
 use Scp\Support\Arr;
 use Scp\Whmcs\Whmcs\Whmcs;
 
@@ -78,10 +77,6 @@ class App
 
     public function resolve($class, array $parameters = [])
     {
-        if ($class == \Scp\Whmcs\Server\Provision\ServerProvisioner::class) {
-            return $this->build($class, $parameters);
-        }
-
         if ($instance = Arr::get($this->instance, $class)) {
             return $instance;
         }
@@ -99,7 +94,7 @@ class App
             return $instance;
         }
 
-        return $this->resolveNew($class);
+        return $this->build($class, $parameters);
     }
 
     /**
@@ -313,11 +308,6 @@ class App
         } elseif ($parameter->isDefaultValueAvailable()) {
             $dependencies[] = $parameter->getDefaultValue();
         }
-    }
-
-    public function resolveNew($class)
-    {
-        return new $class();
     }
 
     public static function get(array $params = [])

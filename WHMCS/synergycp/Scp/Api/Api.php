@@ -27,7 +27,7 @@ class Api
 
     public function __construct($url, $apiKey)
     {
-        $this->url = $url;
+        $this->url = rtrim($url, '/');
         $this->apiKey = $apiKey;
 
         static::instance($this);
@@ -129,9 +129,13 @@ class Api
         return $this->call('DELETE', $path, $data);
     }
 
-    public function url($path = '')
+    public function url($path = '', array $data = [])
     {
-        return "$this->url/$path?key=$this->apiKey";
+        $data += [
+            'key' => $this->apiKey,
+        ];
+
+        return "$this->url/$path?" . http_build_query($data);
     }
 
     public static function instance($instance = null)

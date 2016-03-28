@@ -23,13 +23,7 @@ abstract class ApiRepository
 
     public function make(array $info = [])
     {
-        $item = new $this->class;
-
-        foreach ($info as $key => $value) {
-            $item->{$key} = $value;
-        }
-
-        return $item;
+        return new $this->class($info, $this->api);
     }
 
     public function create(array $info = [])
@@ -39,5 +33,18 @@ abstract class ApiRepository
         $item->save();
 
         return $item;
+    }
+
+    public function path()
+    {
+        return with(new $this->class)->path();
+    }
+
+    /**
+     * @return ApiQuery
+     */
+    public function query()
+    {
+        return new ApiQuery($this->make());
     }
 }

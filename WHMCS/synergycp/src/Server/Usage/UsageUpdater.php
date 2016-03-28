@@ -1,26 +1,45 @@
 <?php
 
 namespace Scp\Whmcs\Server\Usage;
+
 use Scp\Api\ApiError;
-use Scp\Server\ServerQuery;
-use Scp\Whmcs\Server\Usage\UsageFormatter;
+use Scp\Server\Server;
+use Scp\Server\ServerRepository;
+use Scp\Whmcs\LogFactory;
+use Scp\Whmcs\Database\Database;
 
 class UsageUpdater
 {
     /**
-     * @var App
+     * @var LogFactory
      */
-    protected $app;
+    protected $log;
 
     /**
      * @var UsageFormatter
      */
     protected $format;
 
-    public function __construct()
-    {
-        $this->app = App::get();
-        $this->format = $this->app->make(UsageFormatter::class);
+    /**
+     * @var ServerRepository
+     */
+    protected $servers;
+
+    /**
+     * @var Database
+     */
+    protected $database;
+
+    public function __construct(
+        Database $database,
+        LogFactory $log,
+        UsageFormatter $format,
+        ServerRepository $servers
+    ) {
+        $this->log = $log;
+        $this->format = $format;
+        $this->servers = $servers;
+        $this->database = $database;
     }
 
     /**
@@ -30,37 +49,54 @@ class UsageUpdater
     {
         try {
             $this->run();
+
             return true;
         } catch (ApiError $exc) {
-            logActivity('SynergyCP: Error running usage update: ' . $exc->getMessage());
+            $this->log->activity(
+                'SynergyCP: Error running usage update: %s',
+                $exc->getMessage()
+            );
+
             return false;
         }
     }
 
+    /**
+     * @return bool
+     */
     public function run()
     {
         // Get bandwidth from SynergyCP
-        $servers = new ServerQuery;
+        $this->servers->query()->each(function (Server $server) {
+            if (!$server->billing_id) {
+                return;
+            }
 
-        // Update WHMCS DB
-        foreach ($resp->result->products as $product) {
-            if (empty($product->billing_id))
-                continue;
+            $this->log->activity(
+                'SynergyCP: Updating billing ID %s',
+                $server->billing_id
+            );
 
-            logActivity('SynergyCP: Updating billing ID ' . $product->billing_id);
-            update_query("tblhosting", array(
-                //"diskused" => $values['diskusage'],
-                //"dislimit" => $values['disklimit'],
-                "bwusage" => bits_to_MB($product->bandwidth_used),
-                "bwlimit" => bits_to_MB($product->bandwidth_limit, 3),
-                "lastupdate" => "now()",
-            ), array(
-                "id" => $product->billing_id,
-            ));
-        }
+            $updates = $this->prepareUpdates($server);
 
-        logActivity('SynergyCP: Completed usage update');
+            $this->database->update('tblhosting', $updates, [
+                'id' => $server->billing_id,
+            ]);
+        });
 
-        return "success";
+        $this->log->activity('SynergyCP: Completed usage update');
+
+        return true;
+    }
+
+    private function prepareUpdates(Server $server)
+    {
+        return [
+            //"diskused" => $values['diskusage'],
+            //"dislimit" => $values['disklimit'],
+            'bwusage' => $this->format->bitsToMB($server->bandwidth_used),
+            'bwlimit' => $this->format->bitsToMB($server->bandwidth_limit, 3),
+            'lastupdate' => 'now()',
+        ];
     }
 }

@@ -1,15 +1,15 @@
 <?php
 
-namespace Scp\Client;
+namespace Scp\Server;
 
 use Scp\Api\ApiRepository;
 
-class ClientRepository extends ApiRepository
+class ServerRepository extends ApiRepository
 {
     /**
      * @var string
      */
-    protected $class = Client::class;
+    protected $class = Server::class;
 
     public function findByBillingId($billingId)
     {

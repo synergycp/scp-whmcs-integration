@@ -1,4 +1,5 @@
 <?php
+
 use Scp\Whmcs\App;
 
 class TestCase extends PHPUnit_Framework_TestCase
@@ -8,7 +9,7 @@ class TestCase extends PHPUnit_Framework_TestCase
      */
     protected function newApp()
     {
-        return new App;
+        return new App();
     }
 
     /**

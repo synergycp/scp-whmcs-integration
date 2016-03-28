@@ -5,25 +5,32 @@ use Scp\Api\Api;
 
 class ClientModelTest extends TestCase
 {
-    /**
-     * @param  array  $info
-     *
-     * @dataProvider dataSave
-     */
-    public function testSave(array $info)
+    public function setUp()
     {
-        $api = Mockery::mock(Api::class);
-        $client = new Client($info, $api);
+        $this->api = Mockery::mock(Api::class);
+    }
+
+    /**
+     * @param array $info
+     *
+     * @dataProvider dataCreate
+     */
+    public function testCreate(array $info, array $expectedInfo)
+    {
+        $this->api
+            ->shouldReceive('post')
+            ->with('client/', $expectedInfo);
+        $client = new Client($info, $this->api);
         $client->save();
     }
 
-    public function dataSave()
+    public function dataCreate()
     {
         return [
             [
-                [
-                    $testKey = 'test' => $testValue = 'Test',
-                ],
+                $data = [
+                    'test' => 'Test',
+                ], $data,
             ],
         ];
     }

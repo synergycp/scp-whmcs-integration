@@ -1,35 +1,34 @@
 <?php
-use Scp\Whmcs\App;
+
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Ticket\TicketManager;
+use Scp\Whmcs\Client\ClientService;
 use Scp\Server\Server;
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
 use Scp\Client\Client;
-use Scp\Client\ClientRepository;
 
 class ServerProvisionerTest extends TestCase
 {
     /**
-     * @param  array  $input
-     * @param  array  $serverInfo
+     * @param array $input
+     * @param array $serverInfo
      *
      * @dataProvider dataProvision
      */
-    public function testProvision(array $input, array $clientInfo, array $serverInfo)
+    public function testProvision(array $input, array $serverInfo)
     {
         $orig = Mockery::mock(OriginalServerProvisioner::class);
         $whmcs = Mockery::mock(Whmcs::class);
         $server = Mockery::mock(Server::class);
         $client = Mockery::mock(Client::class);
         $tickets = Mockery::mock(TicketManager::class);
-        $clients = Mockery::mock(ClientRepository::class);
-        $provision = new ServerProvisioner($whmcs, $tickets, $clients, $orig);
+        $clients = Mockery::mock(ClientService::class);
+        $provision = new ServerProvisioner($whmcs, $clients, $tickets, $orig);
         $orig->shouldReceive('server')
             ->with($serverInfo, $client)
             ->andReturn($server);
-        $clients->shouldReceive('create')
-            ->with($clientInfo)
+        $clients->shouldReceive('getOrCreate')
             ->andReturn($client);
 
         $provision->create($input);
@@ -48,17 +47,12 @@ class ServerProvisionerTest extends TestCase
                     ],
                     'configoption1' => $cpu = 'cpu-',
                     'clientsdetails' => [
-                        'email' => $clientEmail = 'zanehoop@gmail.com',
-                        'firstname' => $clientFirstName = 'Zane',
-                        'lastname' => $clientLastName = 'Hooper',
+                        'email' => 'zanehoop@gmail.com',
+                        'firstname' => 'Zane',
+                        'lastname' => 'Hooper',
                     ],
                     'userid' => $clientBillingId = '10',
                     'serviceid' => $billingId = '1',
-                ], [
-                    'email' => $clientEmail,
-                    'first' => $clientFirstName,
-                    'last' => $clientLastName,
-                    'billing_id' => $clientBillingId,
                 ], [
                     'ips' => $ips,
                     'ram' => $ram,
@@ -67,14 +61,14 @@ class ServerProvisionerTest extends TestCase
                     'pxe_script' => $osChoice,
                     'port_speed' => $portSpeed,
                     'billing_id' => $billingId,
-                ]
+                ],
             ],
         ];
     }
 
     /**
-     * @param  array  $input
-     * @param  array  $whmcsConfig
+     * @param array $input
+     * @param array $whmcsConfig
      *
      * @dataProvider dataProvisionTicket
      */
@@ -84,12 +78,12 @@ class ServerProvisionerTest extends TestCase
         $whmcs = Mockery::mock(Whmcs::class);
         $client = Mockery::mock(Client::class);
         $tickets = Mockery::mock(TicketManager::class);
-        $clients = Mockery::mock(ClientRepository::class);
-        $provision = new ServerProvisioner($whmcs, $tickets, $clients, $orig);
+        $clients = Mockery::mock(ClientService::class);
+        $provision = new ServerProvisioner($whmcs, $clients, $tickets, $orig);
         $orig->shouldReceive('server')->andReturn(null);
         $whmcs->shouldReceive('configOptions')->andReturn($whmcsConfig);
         $tickets->shouldReceive('createAndLogErrors')->with($ticketInfo);
-        $clients->shouldReceive('create')->andReturn($client);
+        $clients->shouldReceive('getOrCreate')->andReturn($client);
 
         $provision->create($input);
     }
@@ -137,7 +131,7 @@ $memLabel: $memName
 $portLabel: $portName
 $ipLabel: $ipName
 ",
-                ]
+                ],
             ],
         ];
     }

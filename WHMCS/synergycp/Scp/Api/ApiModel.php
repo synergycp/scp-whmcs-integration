@@ -2,6 +2,7 @@
 
 namespace Scp\Api;
 use Scp\Api\Api;
+use Scp\Support\Arr;
 
 abstract class ApiModel
 {
@@ -28,9 +29,22 @@ abstract class ApiModel
 
     abstract public function path();
 
+    /**
+     * @return Api
+     */
+    public function api()
+    {
+        return $this->api;
+    }
+
     public function exists()
     {
         return $this->exists;
+    }
+
+    public function getId()
+    {
+        return $this->id;
     }
 
     public function setExists($exists)
@@ -40,8 +54,6 @@ abstract class ApiModel
 
     public function save()
     {
-        print_r($this->attributes);
-
         if ($this->exists()) {
             return $this->patch();
         }
@@ -54,6 +66,8 @@ abstract class ApiModel
      */
     protected function patch()
     {
+        $this->api->patch($this->path(), $this->attributes);
+
         return $this;
     }
 
@@ -62,11 +76,23 @@ abstract class ApiModel
      */
     protected function create()
     {
+        $this->api->post($this->path(), $this->attributes);
+
         return $this;
     }
 
     public function __set($attribute, $value)
     {
         return $this->attributes[$attribute] = $value;
+    }
+
+    public function __get($attribute)
+    {
+        return $this->getAttribute($attribute);
+    }
+
+    public function getAttribute($attribute)
+    {
+        return Arr::get($this->attributes, $attribute);
     }
 }
