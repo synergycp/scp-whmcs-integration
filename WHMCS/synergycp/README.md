@@ -14,3 +14,7 @@
    - Scroll down to Server Details
    - Type: Synergy Control Panel
    - Access Hash: <API Key>
+ - Go to Setup (Top nav) > Products/Services > Products/Services
+ - Click Create a New Product
+   - Product Type: Dedicated/VPS Server
+   - Module Settings > Module Name: Synergy Control Panel

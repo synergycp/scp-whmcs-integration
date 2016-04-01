@@ -26,10 +26,15 @@ function synergycp_ConfigOptions()
 
 function synergycp_CreateAccount($params)
 {
-    return _synergycp_app()
-        ->resolve(ServerProvisioner::class)
-        ->create($params)
-        ->get();
+    try {
+        $server = _synergycp_app($params)
+            ->resolve(ServerProvisioner::class)
+            ->create($params);
+    } catch (Exception $exc) {
+        return $exc->getMessage();
+    }
+
+    return "success (fail for testing)";
 }
 
 /**
@@ -58,7 +63,7 @@ function synergycp_MetaData()
 
 function synergycp_UsageUpdate($params)
 {
-    $billingId = $params['serviceid'];
+    //$billingId = $params['serviceid'];
     return 'Error running usage update.';
     /*$usage = _synergycp_app($params)->resolve(UsageUpdater::class);
 
