@@ -38,6 +38,9 @@ class App
         $this->singleton(Whmcs::class, function () use ($params) {
             return new Whmcs($params);
         });
+
+        // Ensure that the API instance is initialized.
+        $this->make(Api::class);
     }
 
     /**
@@ -84,7 +87,7 @@ class App
         if ($singleton = Arr::get($this->singleton, $class)) {
             if (!is_a($singleton, Closure::class)) {
                 $singleton = function () use ($singleton) {
-                    return $this->resolveNew($singleton);
+                    return $this->build($singleton);
                 };
             }
 

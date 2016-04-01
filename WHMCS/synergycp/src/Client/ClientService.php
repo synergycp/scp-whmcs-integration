@@ -4,6 +4,7 @@ namespace Scp\Whmcs\Client;
 
 use Scp\Client\ClientRepository;
 use Scp\Whmcs\Whmcs\Whmcs;
+use Scp\Support\Arr;
 
 class ClientService
 {
@@ -30,7 +31,17 @@ class ClientService
         $params = $this->whmcs->getParams();
         $billingId = $params['userid'];
 
-        return $this->clients->findByBillingId($billingId);
+        if ($client = $this->clients->findByBillingId($billingId)) {
+            return $client;
+        }
+
+        $email = Arr::get($params, 'clientsdetails.email');
+        if ($email && $client = $this->clients->findByEmail($email)) {
+            $client->api_user = $billingId;
+            $client->save();
+
+            return $client;
+        }
     }
 
     public function getOrCreate()

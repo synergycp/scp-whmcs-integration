@@ -1,0 +1,38 @@
+{
+	"name": "cabloo/scp-integration",
+	"description": "Synergy Control Panel PHP Integration",
+	"keywords": ["Synergy", "Server", "Control", "Panel", "Dedicated"],
+	"license": "none",
+	"type": "project",
+	"require": {
+	},
+	"require-dev": {
+		"mockery/mockery": "^0.9.4"
+	},
+	"repositories": [],
+	"autoload": {
+		"classmap": [
+            "bootstrap/autoload.php"
+		],
+		"psr-4": {
+			"Scp\\": "src"
+		}
+	},
+	"autoload-dev": {
+		"classmap": [
+			"tests/TestCase.php",
+			"tests/Api/ApiTestCase.php"
+		]
+	},
+	"scripts": {
+		"post-install-cmd": [
+		],
+		"post-update-cmd": [
+		],
+		"post-create-project-cmd": [
+		]
+	},
+	"config": {
+		"preferred-install": "dist"
+	}
+}

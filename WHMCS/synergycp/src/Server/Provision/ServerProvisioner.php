@@ -52,30 +52,32 @@ class ServerProvisioner
         $choices = $params['configoptions'];
         $osChoice = $choices['Operating System'];
         $ram = $choices['Memory'];
-        $hdds = [];
+        $disks = [];
 
         for ($i = 1; $i <= 8; ++$i) {
             $key = "SSD Bay $i";
 
             if (!empty($choices[$key]) && $choices[$key] != 'None') {
-                $hdds[] = $choices[$key];
+                $disks[] = $choices[$key];
             }
         }
 
-        $hdds = ';'.implode(';', $hdds).';';
         $portSpeed = $choices['Port Speed'];
         $ips = $choices['IPv4 Addresses'];
         $cpu = $params['configoption1'];
+        $ipGroup = $choices['Location'];
 
         $client = $this->client->getOrCreate();
 
         $server = $this->provision->server([
-            'ips' => $ips,
-            'ram' => $ram,
-            'cpu' => $cpu,
-            'hdds' => $hdds,
-            'pxe_script' => $osChoice,
-            'port_speed' => $portSpeed,
+            'mem_billing' => $ram,
+            'cpu_billing' => $cpu,
+            'disks_billing' => $disks,
+            'ip_group_billing' => $ipGroup,
+        ], [
+            'ips_billing' => $ips,
+            'pxe_script_billing' => $osChoice,
+            'port_speed_billing' => $portSpeed,
             'billing_id' => $params['serviceid'],
         ], $client);
 
