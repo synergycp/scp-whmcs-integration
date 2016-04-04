@@ -13,7 +13,6 @@ class LogFactory
 
     public function getMessage(array $args)
     {
-        $args = func_get_args();
         if (count($args) == 1) {
             return $args[0];
         }

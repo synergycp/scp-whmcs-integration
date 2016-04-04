@@ -8,6 +8,7 @@ use Scp\Api\ApiKey;
 use Scp\Api\ApiSingleSignOn;
 use Scp\Whmcs\App;
 use Scp\Whmcs\Whmcs\Whmcs;
+use Scp\Whmcs\Whmcs\WhmcsConfig;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Server\ServerRepository;
@@ -19,9 +20,11 @@ function _synergycp_app(array $params = [])
     return App::get($params);
 }
 
-function synergycp_ConfigOptions()
+function synergycp_ConfigOptions(array $params)
 {
-    return _synergycp_app()->resolve(Whmcs::class)->configForm();
+    return _synergycp_app($params)
+        ->resolve(WhmcsConfig::class)
+        ->form();
 }
 
 function synergycp_CreateAccount($params)
@@ -47,24 +50,19 @@ function synergycp_CreateAccount($params)
  *
  * @return array
  */
-function synergycp_MetaData()
+function synergycp_MetaData(array $params)
 {
-    return [
-        'DisplayName' => 'Synergy Control Panel',
-        'APIVersion' => '1.1', // Use API Version 1.1
-        'RequiresServer' => true, // Set true if module requires a server to work
-        //'DefaultNonSSLPort' => '1111', // Default Non-SSL Connection Port
-        //'DefaultSSLPort' => '1112', // Default SSL Connection Port
-        'ServiceSingleSignOnLabel' => 'Login to Synergy',
-        'AdminSingleSignOnLabel' => 'Login to Synergy as Admin',
-    ];
+    return _synergycp_app($params)
+        ->resolve(Whmcs::class)
+        ->meta();
 }
 
+// TODO: single signon
 
 function synergycp_UsageUpdate($params)
 {
     //$billingId = $params['serviceid'];
-    return 'Error running usage update.';
+    return 'success';//'Error running usage update.';
     /*$usage = _synergycp_app($params)->resolve(UsageUpdater::class);
 
     return $usage->runAndLogErrors() ? 'success' : 'Error running usage update';*/

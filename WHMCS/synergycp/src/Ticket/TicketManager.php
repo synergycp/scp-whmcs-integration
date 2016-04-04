@@ -1,6 +1,8 @@
 <?php
 
 namespace Scp\Whmcs\Ticket;
+use Scp\Whmcs\LogFactory;
+use Scp\Whmcs\Whmcs\WhmcsConfig;
 
 class TicketManager
 {
@@ -17,6 +19,24 @@ class TicketManager
     ];
 
     /**
+     * @var LogFactory
+     */
+    protected $log;
+
+    /**
+     * @var WhmcsConfig
+     */
+    protected $config;
+
+    public function __construct(
+        LogFactory $log,
+        WhmcsConfig $config
+    ) {
+        $this->log = $log;
+        $this->config = $config;
+    }
+
+    /**
      * @param array $values
      *
      * @return array the localAPI resulting call.
@@ -26,10 +46,11 @@ class TicketManager
     public function create(array $values)
     {
         $values = array_merge($this->defaults, $values);
+        $admin = $this->config->option(WhmcsConfig::API_USER);
 
-        $results = localAPI('openticket', $values, 'admin');
+        $results = localAPI('openticket', $values, $admin);
         if ($results['result'] != 'success') {
-            throw new TicketCreationFailed();
+            throw new TicketCreationFailed(json_encode($results));
         }
 
         return $results;
@@ -47,7 +68,10 @@ class TicketManager
 
             return true;
         } catch (TicketCreationFailed $exc) {
-            logActivity('SynergyCP: Ticket creation failed '.$exc->getMessage());
+            $this->log->activity(
+                'SynergyCP: Ticket creation failed %s',
+                $exc->getMessage()
+            );
 
             return false;
         }

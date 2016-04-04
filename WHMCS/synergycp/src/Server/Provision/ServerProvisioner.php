@@ -5,8 +5,10 @@ namespace Scp\Whmcs\Server\Provision;
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
 use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Whmcs\Whmcs;
+use Scp\Whmcs\Whmcs\WhmcsConfig;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Client\Client;
+use Scp\Support\Collection;
 
 class ServerProvisioner
 {
@@ -30,13 +32,20 @@ class ServerProvisioner
      */
     protected $provision;
 
+    /**
+     * @var WhmcsConfig
+     */
+    protected $config;
+
     public function __construct(
         Whmcs $whmcs,
+        WhmcsConfig $config,
         ClientService $client,
         TicketManager $tickets,
         OriginalServerProvisioner $provision
     ) {
         $this->whmcs = $whmcs;
+        $this->config = $config;
         $this->client = $client;
         $this->tickets = $tickets;
         $this->provision = $provision;
@@ -62,10 +71,11 @@ class ServerProvisioner
             }
         }
 
-        $portSpeed = $choices['Port Speed'];
+        $cpu = $this->config->option(WhmcsConfig::CPU_BILLING_ID);
+
+        $portSpeed = $choices['Network Port Speed'];
         $ips = $choices['IPv4 Addresses'];
-        $cpu = $params['configoption1'];
-        $ipGroup = $choices['Location'];
+        $ipGroup = $choices['Datacenter Location'];
 
         $client = $this->client->getOrCreate();
 
