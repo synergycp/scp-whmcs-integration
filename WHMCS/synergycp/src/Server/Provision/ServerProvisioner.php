@@ -56,9 +56,10 @@ class ServerProvisioner
      *
      * @return Server|null
      */
-    public function create(array $params)
+    public function create()
     {
-        $choices = $params['configoptions'];
+        $choices = $this->config->options();
+        $params = $this->whmcs->getParams();
         $osChoice = $choices['Operating System'];
         $ram = $choices['Memory'];
         $disks = [];
@@ -76,6 +77,8 @@ class ServerProvisioner
         $portSpeed = $choices['Network Port Speed'];
         $ips = $choices['IPv4 Addresses'];
         $ipGroup = $choices['Datacenter Location'];
+        $nickname = $params['domain'];
+        $password = $params['password'];
 
         $client = $this->client->getOrCreate();
 
@@ -88,7 +91,9 @@ class ServerProvisioner
             'ips_billing' => $ips,
             'pxe_script_billing' => $osChoice,
             'port_speed_billing' => $portSpeed,
-            'billing_id' => $params['serviceid'],
+            'billing_id' => $this->config->get('serviceid'),
+            'nickname' => $nickname,
+            'password' => $password,
         ], $client);
 
         if (!$server) {

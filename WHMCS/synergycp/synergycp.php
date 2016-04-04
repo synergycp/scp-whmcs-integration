@@ -32,12 +32,12 @@ function synergycp_CreateAccount($params)
     try {
         $server = _synergycp_app($params)
             ->resolve(ServerProvisioner::class)
-            ->create($params);
+            ->create();
     } catch (Exception $exc) {
         return $exc->getMessage();
     }
 
-    return "success (fail for testing)";
+    return "success";
 }
 
 /**

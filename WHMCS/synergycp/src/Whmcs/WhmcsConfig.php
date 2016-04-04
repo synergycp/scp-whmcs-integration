@@ -38,9 +38,15 @@ class WhmcsConfig
         return $this->get('configoption'.$key);
     }
 
+    public function options()
+    {
+        return $this->get('configoptions');
+    }
+
     public function form()
     {
         $config = [];
+
         for ($i = 1; $i <= $this->countOptions; ++$i) {
             $this->addFormOption($config, $i);
         }

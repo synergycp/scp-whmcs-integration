@@ -9,7 +9,8 @@ use Scp\Support\Arr;
 class Api extends OriginalApi
 {
     public function __construct(
-        Whmcs $whmcs
+        Whmcs $whmcs,
+        ApiTransport $transport
     ) {
         $params = $whmcs->getParams();
         $apiKey = Arr::get($params, 'serveraccesshash');
@@ -30,5 +31,7 @@ class Api extends OriginalApi
         $url = sprintf('%s://%s%s', $scheme, $host, $path);
 
         parent::__construct($url, $apiKey);
+
+        $this->setTransport($transport);
     }
 }
