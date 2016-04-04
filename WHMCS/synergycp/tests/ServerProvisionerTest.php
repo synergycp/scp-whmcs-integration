@@ -55,9 +55,9 @@ class ServerProvisionerTest extends TestCase
                     'serviceid' => $billingId = '1',
                 ], [
                     'ips' => $ips,
-                    'ram' => $ram,
+                    'mem' => $ram,
                     'cpu' => $cpu,
-                    'hdds' => ';;',
+                    'disks' => [],
                     'pxe_script' => $osChoice,
                     'port_speed' => $portSpeed,
                     'billing_id' => $billingId,

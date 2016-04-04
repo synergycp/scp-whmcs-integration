@@ -5,8 +5,10 @@ namespace Scp\Whmcs\Server\Provision;
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
 use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Whmcs\Whmcs;
+use Scp\Whmcs\Whmcs\WhmcsConfig;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Client\Client;
+use Scp\Support\Collection;
 
 class ServerProvisioner
 {
@@ -30,13 +32,20 @@ class ServerProvisioner
      */
     protected $provision;
 
+    /**
+     * @var WhmcsConfig
+     */
+    protected $config;
+
     public function __construct(
         Whmcs $whmcs,
+        WhmcsConfig $config,
         ClientService $client,
         TicketManager $tickets,
         OriginalServerProvisioner $provision
     ) {
         $this->whmcs = $whmcs;
+        $this->config = $config;
         $this->client = $client;
         $this->tickets = $tickets;
         $this->provision = $provision;
@@ -52,30 +61,33 @@ class ServerProvisioner
         $choices = $params['configoptions'];
         $osChoice = $choices['Operating System'];
         $ram = $choices['Memory'];
-        $hdds = [];
+        $disks = [];
 
         for ($i = 1; $i <= 8; ++$i) {
             $key = "SSD Bay $i";
 
             if (!empty($choices[$key]) && $choices[$key] != 'None') {
-                $hdds[] = $choices[$key];
+                $disks[] = $choices[$key];
             }
         }
 
-        $hdds = ';'.implode(';', $hdds).';';
-        $portSpeed = $choices['Port Speed'];
+        $cpu = $this->config->option(WhmcsConfig::CPU_BILLING_ID);
+
+        $portSpeed = $choices['Network Port Speed'];
         $ips = $choices['IPv4 Addresses'];
-        $cpu = $params['configoption1'];
+        $ipGroup = $choices['Datacenter Location'];
 
         $client = $this->client->getOrCreate();
 
         $server = $this->provision->server([
-            'ips' => $ips,
-            'ram' => $ram,
-            'cpu' => $cpu,
-            'hdds' => $hdds,
-            'pxe_script' => $osChoice,
-            'port_speed' => $portSpeed,
+            'mem_billing' => $ram,
+            'cpu_billing' => $cpu,
+            'disks_billing' => $disks,
+            'ip_group_billing' => $ipGroup,
+        ], [
+            'ips_billing' => $ips,
+            'pxe_script_billing' => $osChoice,
+            'port_speed_billing' => $portSpeed,
             'billing_id' => $params['serviceid'],
         ], $client);
 

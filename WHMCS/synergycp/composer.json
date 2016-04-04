@@ -7,21 +7,19 @@
 	"require": {
 	},
 	"require-dev": {
-		"mockery/mockery": "^0.9.4"
 	},
 	"repositories": [],
 	"autoload": {
 		"classmap": [
+            "bootstrap/autoload.php"
 		],
 		"psr-4": {
-			"Scp\\": "Scp",
             "Scp\\Whmcs\\": "src"
 		}
 	},
 	"autoload-dev": {
 		"classmap": [
-			"tests/TestCase.php",
-			"tests/Api/ApiTestCase.php"
+			"tests/TestCase.php"
 		]
 	},
 	"scripts": {
