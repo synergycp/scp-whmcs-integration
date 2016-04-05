@@ -13,7 +13,7 @@ class ApiTransport implements ApiTransporter
      * @param array  $headers
      *
      * @return ApiResponse
-     * 
+     *
      * @throws ApiError
      */
     public function call($method, $url, $postData, array $headers)

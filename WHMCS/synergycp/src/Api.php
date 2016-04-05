@@ -29,7 +29,7 @@ class Api extends OriginalApi
 
         $scheme = Arr::get($parsed, 'scheme', 'http');
         $url = sprintf('%s://%s%s', $scheme, $host, $path);
-
+        
         parent::__construct($url, $apiKey);
 
         $this->setTransport($transport);

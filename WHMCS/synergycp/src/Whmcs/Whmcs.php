@@ -17,22 +17,6 @@ class Whmcs
     /**
      * @return array
      */
-    public function meta()
-    {
-        return [
-            'DisplayName' => 'Synergy Control Panel',
-            'APIVersion' => '1.1', // Use API Version 1.1
-            'RequiresServer' => true, // Set true if module requires a server to work
-            //'DefaultNonSSLPort' => '1111', // Default Non-SSL Connection Port
-            //'DefaultSSLPort' => '1112', // Default SSL Connection Port
-            'ServiceSingleSignOnLabel' => 'Login to Synergy',
-            'AdminSingleSignOnLabel' => 'Login to Synergy as Admin',
-        ];
-    }
-
-    /**
-     * @return array
-     */
     public function configOptions()
     {
         $params = $this->getParams();
@@ -65,5 +49,28 @@ class Whmcs
     public function getParams()
     {
         return $this->params;
+    }
+
+    /**
+     * @return array
+     */
+    public static function meta()
+    {
+        return [
+            'DisplayName' => 'Synergy Control Panel',
+
+            // Use WHMCS API Version 1.1
+            'APIVersion' => '1.1',
+
+            // Set true if module requires a server to work
+            'RequiresServer' => true,
+
+            //'DefaultNonSSLPort' => '1111',
+            //'DefaultSSLPort' => '1112',
+
+            // Single Sign On (Where does this show up?)
+            //'ServiceSingleSignOnLabel' => 'Login to Synergy',
+            //'AdminSingleSignOnLabel' => 'Login to Synergy as Admin',
+        ];
     }
 }

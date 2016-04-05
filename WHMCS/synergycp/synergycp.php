@@ -9,6 +9,7 @@ use Scp\Api\ApiSingleSignOn;
 use Scp\Whmcs\App;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Whmcs\WhmcsConfig;
+use Scp\Whmcs\Whmcs\WhmcsButtons;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Server\ServerRepository;
@@ -20,6 +21,13 @@ function _synergycp_app(array $params = [])
     return App::get($params);
 }
 
+/**
+ * Server configuration options.
+ *
+ * @param  array  $params
+ *
+ * @return array
+ */
 function synergycp_ConfigOptions(array $params)
 {
     return _synergycp_app($params)
@@ -27,7 +35,14 @@ function synergycp_ConfigOptions(array $params)
         ->form();
 }
 
-function synergycp_CreateAccount($params)
+/**
+ * Triggered on Server Provisioning.
+ *
+ * @param  array $params
+ *
+ * @return string
+ */
+function synergycp_CreateAccount(array $params)
 {
     try {
         $server = _synergycp_app($params)
@@ -52,14 +67,12 @@ function synergycp_CreateAccount($params)
  */
 function synergycp_MetaData(array $params)
 {
-    return _synergycp_app($params)
-        ->resolve(Whmcs::class)
-        ->meta();
+    return Whmcs::meta();
 }
 
 // TODO: single signon
 
-function synergycp_UsageUpdate($params)
+function synergycp_UsageUpdate(array $params)
 {
     //$billingId = $params['serviceid'];
     return 'success';//'Error running usage update.';
@@ -69,18 +82,18 @@ function synergycp_UsageUpdate($params)
 }
 
 /**
- * TODO: usage?
+ * Displayed on the view product page of WHMCS Admin.
  *
  * @param  array $params
  */
-function synergycp_LoginLink($params)
+function synergycp_LoginLink(array $params)
 {
     if (isset($_GET['login_service'])) {
         synergycp_btn_manage($params);
     }
 
     echo '<a href="?'.$_SERVER['QUERY_STRING'].'&login_service" '
-        .'target="blank">Login as Client</a>';
+        .'target="blank">Login as Client on SynergyCP</a>';
 }
 
 /**
@@ -93,15 +106,18 @@ function synergycp_LoginLink($params)
  *
  * @return array
  */
-function synergycp_ClientAreaCustomButtonArray($params)
+function synergycp_ClientAreaCustomButtonArray(array $params)
 {
-    return [
-        'Manage on SynergyCP' => 'btn_manage',
-    ];
+    return _synergycp_app($params)
+        ->make(WhmcsButtons::class)
+        ->client();
 }
 
-function synergycp_btn_manage($params)
+function synergycp_btn_manage(array $params)
 {
+    // Clear output buffer
+    ob_clean();
+
     $client = _synergycp_app($params)
         ->resolve(ClientService::class)
         ->getOrCreate();
@@ -119,9 +135,11 @@ function synergycp_btn_manage($params)
 
     $url = $sso->url();
 
-    header("Location: $url");
     die(sprintf(
-        'Transfer to <a href="%s">SynergyCP</a>.',
-        $url
+        '<script type="text/javascript">window.location.href="%s"</script>'.
+        'Transfer to <a href="%s">%s</a>.',
+        $url,
+        $url,
+        'SynergyCP'
     ));
 }

@@ -58,6 +58,7 @@ class ApiPaginator
         $modelClass = get_class($model);
         $api = $model->api();
         $pageData = $this->pageData();
+
         $response = $api->get(
             $model->path(),
             $pageData + $this->query->filters()
