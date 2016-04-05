@@ -1,9 +1,12 @@
 <?php
 
 namespace Scp\Whmcs\Whmcs;
+use Scp\Support\Arr;
 
 class Whmcs
 {
+    const META = 'MetaData';
+
     /**
      * @var array
      */
@@ -51,7 +54,19 @@ class Whmcs
         return $this->params;
     }
 
+    public function getParam($param, $default = null)
+    {
+        return Arr::get($this->getParams(), $param, $default);
+    }
+
     /**
+     * Define module related meta data.
+     *
+     * Values returned here are used to determine module related abilities and
+     * settings.
+     *
+     * @see http://docs.whmcs.com/Provisioning_Module_Meta_Data_Parameters
+     *
      * @return array
      */
     public static function meta()
@@ -71,6 +86,13 @@ class Whmcs
             // Single Sign On (Where does this show up?)
             //'ServiceSingleSignOnLabel' => 'Login to Synergy',
             //'AdminSingleSignOnLabel' => 'Login to Synergy as Admin',
+        ];
+    }
+
+    public static function staticFunctions()
+    {
+        return [
+            static::META => 'meta',
         ];
     }
 }

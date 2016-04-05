@@ -62,15 +62,8 @@ class ServerProvisioner
         $params = $this->whmcs->getParams();
         $osChoice = $choices['Operating System'];
         $ram = $choices['Memory'];
-        $disks = [];
-
-        for ($i = 1; $i <= 8; ++$i) {
-            $key = "SSD Bay $i";
-
-            if (!empty($choices[$key]) && $choices[$key] != 'None') {
-                $disks[] = $choices[$key];
-            }
-        }
+        $disks = $this->multiChoice($choices, "SSD Bay %d");
+        $addons = $this->multiChoice($choices, "Add On %d");
 
         $cpu = $this->config->option(WhmcsConfig::CPU_BILLING_ID);
 
@@ -86,6 +79,7 @@ class ServerProvisioner
             'mem_billing' => $ram,
             'cpu_billing' => $cpu,
             'disks_billing' => $disks,
+            'addons_billing' => $addons,
             'ip_group_billing' => $ipGroup,
         ], [
             'ips_billing' => $ips,
@@ -94,6 +88,9 @@ class ServerProvisioner
             'billing_id' => $this->config->get('serviceid'),
             'nickname' => $nickname,
             'password' => $password,
+            'pxe_access' => $this->config->option(WhmcsConfig::PXE_ACCESS),
+            'ipmi_access' => $this->config->option(WhmcsConfig::IPMI_ACCESS),
+            'switch_access' => $this->config->option(WhmcsConfig::SWITCH_ACCESS),
         ], $client);
 
         if (!$server) {
@@ -105,16 +102,48 @@ class ServerProvisioner
         return $server;
     }
 
+    /**
+     * @param  array  $choices
+     * @param  string $format  format string for the keys of the field.
+     *
+     * @return array
+     */
+    private function multiChoice(array $choices, $format)
+    {
+        $result = [];
+
+        for ($i = 1; $i <= 8; ++$i) {
+            $key = sprintf($format, $i);
+
+            if (!empty($choices[$key]) && $choices[$key] != 'None') {
+                $result[] = $choices[$key];
+            }
+        }
+
+        return $result;
+    }
+
     private function createTicket(array $params)
     {
         $message = sprintf(
-            "Your server has been queued for setup and will be processed shortly.\n\nBilling ID: %s\n",
+            "Your server has been queued for setup and will be processed shortly.\n\nProduct Name: %s\nBilling ID: %s\n",
+            $this->getProductName($params),
             $params['serviceid']
+        );
+
+        $message .= sprintf(
+            "Hostname: %s\nRoot Password: %s\n",
+            $params['domain'],
+            $params['password']
         );
 
         $configOpts = $this->whmcs->configOptions();
         foreach ($params['configoptions'] as $optName => $billingVal) {
-            $message .= "$optName: {$configOpts[$optName][$billingVal]}\n";
+            $message .= sprintf(
+                "%s: %s\n",
+                $optName,
+                $configOpts[$optName][$billingVal]
+            );
         }
 
         $this->tickets->createAndLogErrors([
@@ -122,5 +151,18 @@ class ServerProvisioner
             'subject' => 'Server provisioning request',
             'message' => $message,
         ]);
+    }
+
+    private function getProductName(array $params)
+    {
+        $productId = $params['pid'];
+
+        $query = "SELECT name FROM tblproducts WHERE id = '$productId' LIMIT 1";
+        $query = mysql_query($query);
+        $result = mysql_fetch_object($query);
+
+        if ($result) {
+            return $result->name;
+        }
     }
 }

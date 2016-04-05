@@ -28,8 +28,8 @@ class Api
     public function __construct($url, $apiKey)
     {
         $this->url = rtrim($url, '/');
-        $this->apiKey = $apiKey;
-        $this->transport = new ApiTransport;
+        $this->setApiKey($apiKey);
+        $this->setTransport(new ApiTransport);
 
         static::instance($this);
     }
@@ -45,6 +45,21 @@ class Api
     public function setTransport(ApiTransporter $transporter)
     {
         $this->transport = $transporter;
+
+        return $this;
+    }
+
+    /**
+     * @return ApiTransporter
+     */
+    public function getTransport()
+    {
+        return $this->transport;
+    }
+
+    public function setApiKey($key)
+    {
+        $this->apiKey = $key;
 
         return $this;
     }

@@ -2,18 +2,29 @@
 
 namespace Scp\Whmcs\Whmcs;
 
+use Scp\Support\Collection;
+
 class WhmcsConfig
 {
+    /**
+     * Functions
+     */
+    const FORM = 'ConfigOptions';
+
     /**
      * Config Options.
      */
     const CPU_BILLING_ID = 1;
     const API_USER = 2;
+    const TICKET_DEPT = 3;
+    const PXE_ACCESS = 4;
+    const IPMI_ACCESS = 5;
+    const SWITCH_ACCESS = 6;
 
     /**
      * @var int
      */
-    protected $countOptions = 2;
+    protected $countOptions = self::SWITCH_ACCESS;
 
     /**
      * @var Whmcs
@@ -35,7 +46,14 @@ class WhmcsConfig
 
     public function option($key)
     {
-        return $this->get('configoption'.$key);
+        $value = $this->get('configoption'.$key);
+
+        switch ($key) {
+        case static::TICKET_DEPT:
+            return (string) $this->getDepartmentIdByName($value);
+        }
+
+        return $value;
     }
 
     public function options()
@@ -69,6 +87,73 @@ class WhmcsConfig
                 'Size' => '50',
                 'Description' => 'This must be an administrator user with API access enabled.',
             ];
+        case static::TICKET_DEPT:
+            return $config['Ticket Department'] = [
+                'Type' => 'dropdown',
+                'Description' => 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.',
+                'Options' => $this->getDepartmentNames()->implode(','),
+            ];
+        case static::PXE_ACCESS:
+            return $config['PXE Access'] = [
+                'Type' => 'yesno',
+            ];
+        case static::IPMI_ACCESS:
+            return $config['IPMI Access'] = [
+                'Type' => 'yesno',
+            ];
+        case static::SWITCH_ACCESS:
+            return $config['Switch Access'] = [
+                'Type' => 'yesno',
+            ];
         }
+    }
+
+    protected function getDepartmentNames()
+    {
+        $admin = $this->option(static::API_USER);
+        $results = localAPI('getsupportdepartments', [], $admin);
+        $departments = $this->getDepartmentsFromResults($results);
+        $getName = function ($department) {
+            return $department['name'];
+        };
+
+        return with(new Collection($departments))
+            ->keyBy('id')
+            ->map($getName);
+    }
+
+    /**
+     * @param  array  $results
+     *
+     * @return array
+     */
+    protected function getDepartmentsFromResults(array $results)
+    {
+        if ($results['result'] != 'success') {
+            return [[
+                'name' => 'Error: ' . json_encode($results),
+            ]];
+        }
+
+        return $results['departments']['department'];
+    }
+
+    /**
+     * @param  string $value
+     *
+     * @return int
+     */
+    protected function getDepartmentIdByName($value)
+    {
+        $escaped = htmlspecialchars($value);
+
+        return $this->getDepartmentNames()->search($escaped);
+    }
+
+    public static function functions()
+    {
+        return [
+            static::FORM => 'form',
+        ];
     }
 }
