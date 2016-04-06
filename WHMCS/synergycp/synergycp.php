@@ -38,7 +38,8 @@ function _synergycp_map_static_class($class)
    }
 }
 
-_synergycp_map_class(Whmcs\WhmcsButtons::class);
 _synergycp_map_class(Whmcs\WhmcsConfig::class);
 _synergycp_map_class(Whmcs\WhmcsEvents::class);
+_synergycp_map_class(Whmcs\WhmcsButtons::class);
+_synergycp_map_class(Whmcs\WhmcsTemplates::class);
 _synergycp_map_static_class(Whmcs\Whmcs::class);

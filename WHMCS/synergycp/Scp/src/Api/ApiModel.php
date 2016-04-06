@@ -89,14 +89,19 @@ abstract class ApiModel
         return $this;
     }
 
-    public function __set($attribute, $value)
-    {
-        $this->setAttribute($attribute, $value);
-    }
-
     public function setAttribute($attribute, $value)
     {
         $this->attributes[$attribute] = $value;
+    }
+
+    public function getAttribute($attribute)
+    {
+        return Arr::get($this->attributes, $attribute);
+    }
+
+    public function __set($attribute, $value)
+    {
+        $this->setAttribute($attribute, $value);
     }
 
     public function __get($attribute)
@@ -104,8 +109,11 @@ abstract class ApiModel
         return $this->getAttribute($attribute);
     }
 
-    public function getAttribute($attribute)
+    /**
+     * @return ApiQuery
+     */
+    public static function query()
     {
-        return Arr::get($this->attributes, $attribute);
+        return new ApiQuery(new static);
     }
 }

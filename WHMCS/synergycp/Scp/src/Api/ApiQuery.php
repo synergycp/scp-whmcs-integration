@@ -94,7 +94,7 @@ class ApiQuery
         return new ApiPaginator($this, $count, $page);
     }
 
-    public function each(\Closure $callback)
+    public function each($callback)
     {
         $this->chunk(1000, function (ApiPaginator $page) use ($callback) {
             $page->each(function ($item) use ($callback) {

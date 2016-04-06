@@ -62,7 +62,7 @@ class WhmcsButtons
 
     public function client()
     {
-        $billingId = $this->whmcs->getParams()['serviceid'];
+        $billingId = $this->whmcs->getParam('serviceid');
         $server = $this->servers->findByBillingId($billingId);
 
         $actions = $this->otherActions()
