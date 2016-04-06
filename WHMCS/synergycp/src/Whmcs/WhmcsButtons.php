@@ -21,6 +21,13 @@ class WhmcsButtons
     const PORT_POWER_ON = 'btn_port_power_on';
     const PORT_POWER_OFF = 'btn_port_power_off';
 
+    const RESET_BMC = 'btn_reset_bmc';
+    const PXE_BOOT = 'btn_pxe_boot';
+    const POWER_ON = 'btn_power_on';
+    const POWER_OFF = 'btn_power_off';
+    const POWER_RESET = 'btn_power_reset';
+    const POWER_SHUTDOWN = 'btn_power_shutdown';
+
     /**
      * @var Api
      */
@@ -93,12 +100,12 @@ class WhmcsButtons
         }
 
         return [
-            'Reset BMC' => 'btn_reset_bmc',
-            'PXE Boot' => 'btn_pxe_boot',
-            'Power On' => 'btn_power_on',
-            'Power Off' => 'btn_power_off',
-            'Power Reset' => 'btn_power_reset',
-            'Soft Shutdown' => 'btn_power_shutdown',
+            'Reset BMC' => static::RESET_BMC,
+            'PXE Boot' => static::PXE_BOOT,
+            'Power On' => static::POWER_ON,
+            'Power Off' => static::POWER_OFF,
+            'Power Reset' => static::POWER_RESET,
+            'Soft Shutdown' => static::POWER_SHUTDOWN,
         ];
     }
 
@@ -118,8 +125,87 @@ class WhmcsButtons
             static::MANAGE => 'manage',
             static::CLIENT_ACTIONS => 'client',
             static::PORT_POWER_ON => 'portPowerOn',
+            static::PORT_POWER_OFF => 'portPowerOff',
             static::ADMIN_LOGIN_LINK => 'loginLink',
+            static::RESET_BMC => 'resetBmc',
+            static::PXE_BOOT => 'pxeBoot',
+            static::POWER_ON => 'powerOn',
+            static::POWER_OFF => 'powerOff',
+            static::POWER_RESET => 'powerReset',
+            static::POWER_SHUTDOWN => 'powerShutdown',
         ];
+    }
+
+    /**
+     * @return string "success" or error message
+     */
+    public function resetBmc()
+    {
+        $this->ipmiControl([
+            'reset_bmc' => true,
+        ]);
+
+        return "success";
+    }
+
+    /**
+     * @return string "success" or error message
+     */
+    public function pxeBoot()
+    {
+        $this->ipmiControl([
+            'pxe_boot' => true,
+        ]);
+
+        return "success";
+    }
+
+    /**
+     * @return string "success" or error message
+     */
+    public function powerOn()
+    {
+        $this->ipmiControl([
+            'power' => 'on',
+        ]);
+
+        return "success";
+    }
+
+    /**
+     * @return string "success" or error message
+     */
+    public function powerOff()
+    {
+        $this->ipmiControl([
+            'power' => 'off',
+        ]);
+
+        return "success";
+    }
+
+    /**
+     * @return string "success" or error message
+     */
+    public function powerReset()
+    {
+        $this->ipmiControl([
+            'power' => 'reset',
+        ]);
+
+        return "success";
+    }
+
+    /**
+     * @return string "success" or error message
+     */
+    public function powerShutdown()
+    {
+        $this->ipmiControl([
+            'power' => 'soft',
+        ]);
+
+        return "success";
     }
 
     /**
@@ -187,6 +273,17 @@ class WhmcsButtons
             'server/%d/switch/%d',
             $server->id,
             $server->switch_id
+        );
+
+        return $this->api->asClient()->patch($url, $data);
+    }
+
+    protected function ipmiControl(array $data)
+    {
+        $server = $this->getServer();
+        $url = sprintf(
+            'server/%d/ipmi',
+            $server->id
         );
 
         return $this->api->asClient()->patch($url, $data);
