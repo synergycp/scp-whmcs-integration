@@ -35,7 +35,7 @@ class ApiResponse
      *
      * @throws JsonDecodingError
      */
-    public function raw()
+    public function decode()
     {
         $resp = json_decode($this->body);
         if (!$resp) {
@@ -45,10 +45,16 @@ class ApiResponse
         return $resp;
     }
 
+    public function raw()
+    {
+        return $this->body;
+    }
+
     public function data()
     {
-        $resp = $this->raw();
+        $resp = $this->decode();
 
+        /*
         if (!empty($resp->msgs))
             foreach ($resp->msgs as $msg)
                 if ($msg->cat == 'danger')
@@ -56,6 +62,7 @@ class ApiResponse
 
         if (empty($resp->result))
             $resp->result = "success";
+        */
 
         return $resp->data;
     }

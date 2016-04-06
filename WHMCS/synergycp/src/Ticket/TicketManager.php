@@ -10,7 +10,6 @@ class TicketManager
      * @var array
      */
     protected $defaults = [
-        'deptid' => '1',
         'priority' => 'Low',
     //  'clientid' => $client,
     //  'subject' => "Testing Tickets",
@@ -27,6 +26,11 @@ class TicketManager
      * @var WhmcsConfig
      */
     protected $config;
+
+    /**
+     * @var int|null
+     */
+    protected $deptId;
 
     public function __construct(
         LogFactory $log,
@@ -45,7 +49,11 @@ class TicketManager
      */
     public function create(array $values)
     {
-        $values = array_merge($this->defaults, $values);
+        $this->deptId = $this->deptId ?: $this->config->option(WhmcsConfig::TICKET_DEPT);
+        $defaults = [
+            'deptid' => $this->deptId,
+        ];
+        $values = array_merge($this->defaults, $defaults, $values);
         $admin = $this->config->option(WhmcsConfig::API_USER);
 
         $results = localAPI('openticket', $values, $admin);
