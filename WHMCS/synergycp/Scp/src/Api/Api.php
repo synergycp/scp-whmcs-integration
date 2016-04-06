@@ -28,9 +28,40 @@ class Api
     public function __construct($url, $apiKey)
     {
         $this->url = rtrim($url, '/');
-        $this->apiKey = $apiKey;
+        $this->setApiKey($apiKey);
+        $this->setTransport(new ApiTransport);
 
         static::instance($this);
+    }
+
+    /**
+     * Set the API's request transporter.
+     * This can also be used to, for instance, log all API requests.
+     *
+     * @param ApiTransporter $transporter
+     *
+     * @return $this
+     */
+    public function setTransport(ApiTransporter $transporter)
+    {
+        $this->transport = $transporter;
+
+        return $this;
+    }
+
+    /**
+     * @return ApiTransporter
+     */
+    public function getTransport()
+    {
+        return $this->transport;
+    }
+
+    public function setApiKey($key)
+    {
+        $this->apiKey = $key;
+
+        return $this;
     }
 
     /**
@@ -45,31 +76,17 @@ class Api
     public function call($method, $path, array $data = [])
     {
         $headers = ['Content-Type: application/json'];
-        $url = $this->url($path, $data);
+        $getData = $data;
         $postData = "";
-        $curl = curl_init();
 
         if (strtoupper($method) != 'GET') {
+            $getData = [];
             $postData = json_encode($data);
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $url,
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_POSTFIELDS => $postData,
-            CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_RETURNTRANSFER => 1,
-        ));
+        $url = $this->url($path, $getData);
 
-        $body = curl_exec($curl);
-
-        if (curl_errno($curl)) {
-            throw new ApiError(curl_error($curl));
-        }
-
-        curl_close($curl);
-
-        return new ApiResponse($body);
+        return $this->transport->call($method, $url, $postData, $headers);
     }
 
     /**
@@ -135,6 +152,11 @@ class Api
         return "$this->url/$path?" . http_build_query($data);
     }
 
+    /**
+     * @param  static [$instance] set the instance
+     *
+     * @return static
+     */
     public static function instance($instance = null)
     {
         static::$instance = $instance ?: static::$instance;

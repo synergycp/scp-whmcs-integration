@@ -11,9 +11,13 @@ class LogFactory
         logActivity($msg);
     }
 
+    public function call($module, $action, $data, $raw, $respData, array $replace = [])
+    {
+        logModuleCall($module, $action, $data, $raw, $respData, $replace);
+    }
+
     public function getMessage(array $args)
     {
-        $args = func_get_args();
         if (count($args) == 1) {
             return $args[0];
         }

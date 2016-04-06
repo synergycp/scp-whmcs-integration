@@ -36,7 +36,7 @@ class ServerProvisioner
     public function server(array $filters, array $set, Client $client)
     {
         $filters = $this->addDefaultFilters($filters);
-        // TODO: if provision fails, try next server.
+        // TODO: pass filters as server_filters instead of server_id
         $server = $this->servers->query()
             ->where($filters)
             ->first();
@@ -44,15 +44,18 @@ class ServerProvisioner
             return;
         }
 
-        $set['client_id'] = $client->id;
-        $result = $this->api->post('server/provision', $filters);
+        $provisionData = [
+            'client_id' => $client->id,
+            'server_id' => $server->id,
+        ] + $set;
+        $result = $this->api->post('server/provision', $provisionData);
         $data = $result->data();
 
         if (!$data) {
             return;
         }
 
-        $server = new Server($data, $this->api);
+        $server = new Server((array) $data->server, $this->api);
         $server->setExists(true);
 
         return $server;

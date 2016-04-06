@@ -1,6 +1,8 @@
 <?php
 
 namespace Scp\Whmcs\Ticket;
+use Scp\Whmcs\LogFactory;
+use Scp\Whmcs\Whmcs\WhmcsConfig;
 
 class TicketManager
 {
@@ -8,13 +10,35 @@ class TicketManager
      * @var array
      */
     protected $defaults = [
-        'deptid' => '1',
         'priority' => 'Low',
     //  'clientid' => $client,
     //  'subject' => "Testing Tickets",
     //  'message' => "This is a sample ticket opened by the API as a client",
     //  'customfields' => base64_encode(serialize(array("8"=>"mydomain.com"))),
     ];
+
+    /**
+     * @var LogFactory
+     */
+    protected $log;
+
+    /**
+     * @var WhmcsConfig
+     */
+    protected $config;
+
+    /**
+     * @var int|null
+     */
+    protected $deptId;
+
+    public function __construct(
+        LogFactory $log,
+        WhmcsConfig $config
+    ) {
+        $this->log = $log;
+        $this->config = $config;
+    }
 
     /**
      * @param array $values
@@ -25,11 +49,16 @@ class TicketManager
      */
     public function create(array $values)
     {
-        $values = array_merge($this->defaults, $values);
+        $this->deptId = $this->deptId ?: $this->config->option(WhmcsConfig::TICKET_DEPT);
+        $defaults = [
+            'deptid' => $this->deptId,
+        ];
+        $values = array_merge($this->defaults, $defaults, $values);
+        $admin = $this->config->option(WhmcsConfig::API_USER);
 
-        $results = localAPI('openticket', $values, 'admin');
+        $results = localAPI('openticket', $values, $admin);
         if ($results['result'] != 'success') {
-            throw new TicketCreationFailed();
+            throw new TicketCreationFailed(json_encode($results));
         }
 
         return $results;
@@ -47,7 +76,10 @@ class TicketManager
 
             return true;
         } catch (TicketCreationFailed $exc) {
-            logActivity('SynergyCP: Ticket creation failed '.$exc->getMessage());
+            $this->log->activity(
+                'SynergyCP: Ticket creation failed %s',
+                $exc->getMessage()
+            );
 
             return false;
         }

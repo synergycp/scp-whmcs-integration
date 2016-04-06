@@ -14,6 +14,7 @@
             "bootstrap/autoload.php"
 		],
 		"psr-4": {
+			"Scp\\": "Scp/src",
             "Scp\\Whmcs\\": "src"
 		}
 	},

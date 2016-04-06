@@ -23,7 +23,8 @@ class ApiKey extends ApiModel
     public function owner(ApiModel $model)
     {
         $this->owner = $model;
-        $this->type();
+        $this->owner_id = $model->getId();
+        $this->owner_type = $this->type();
 
         return $this;
     }
