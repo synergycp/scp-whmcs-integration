@@ -16,6 +16,7 @@ class WhmcsButtons
      * Internal Identifiers
      */
     const CLIENT_ACTIONS = 'ClientAreaCustomButtonArray';
+    const CLIENT_FUNCTIONS = 'ClientAreaAllowedFunctions';
     const MANAGE = 'btn_manage';
     const ADMIN_LOGIN_LINK = 'LoginLink';
     const PORT_POWER_ON = 'btn_port_power_on';
@@ -27,6 +28,9 @@ class WhmcsButtons
     const POWER_OFF = 'btn_power_off';
     const POWER_RESET = 'btn_power_reset';
     const POWER_SHUTDOWN = 'btn_power_shutdown';
+
+    const IPMI_CLIENT_CREATE = 'btn_ipmi_client_create';
+    const IPMI_CLIENT_DELETE = 'btn_ipmi_client_delete';
 
     /**
      * @var Api
@@ -72,6 +76,19 @@ class WhmcsButtons
           ;
 
         return $actions;
+    }
+
+    /**
+     * Client actions that are not visible as buttons.
+     *
+     * @return array
+     */
+    public function clientOtherActions()
+    {
+        return [
+            static::IPMI_CLIENT_DELETE,
+            static::IPMI_CLIENT_CREATE,
+        ];
     }
 
     protected function otherActions()
@@ -124,6 +141,7 @@ class WhmcsButtons
         return [
             static::MANAGE => 'manage',
             static::CLIENT_ACTIONS => 'client',
+            static::CLIENT_FUNCTIONS => 'clientOtherActions',
             static::PORT_POWER_ON => 'portPowerOn',
             static::PORT_POWER_OFF => 'portPowerOff',
             static::ADMIN_LOGIN_LINK => 'loginLink',
@@ -133,7 +151,27 @@ class WhmcsButtons
             static::POWER_OFF => 'powerOff',
             static::POWER_RESET => 'powerReset',
             static::POWER_SHUTDOWN => 'powerShutdown',
+            static::IPMI_CLIENT_CREATE => 'ipmiClientCreate',
+            static::IPMI_CLIENT_DELETE => 'ipmiClientDelete',
         ];
+    }
+
+    public function ipmiClientCreate()
+    {
+        $this->ipmiControl([
+            'add_user' => true,
+        ]);
+
+        return "success";
+    }
+
+    public function ipmiClientDelete()
+    {
+        $this->ipmiControl([
+            'delete_user' => true,
+        ]);
+
+        return "success";
     }
 
     /**
