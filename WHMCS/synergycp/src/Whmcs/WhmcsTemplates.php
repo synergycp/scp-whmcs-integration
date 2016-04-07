@@ -16,10 +16,16 @@ class WhmcsTemplates
     public function clientArea()
     {
         $server = $this->servers->current();
+        $urlAction = sprintf(
+            'clientarea.php?action=productdetails&id=%d&modop=custom&a=',
+            $this->servers->currentBillingId()
+        );
 
         return [
             'templatefile' => 'clientarea',
             'vars' => [
+                'url_action' => $urlAction,
+                'server' => $server,
                 'ips' => $server->entities(),
             ],
         ];
