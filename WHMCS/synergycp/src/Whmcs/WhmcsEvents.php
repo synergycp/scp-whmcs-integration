@@ -2,6 +2,7 @@
 
 namespace Scp\Whmcs\Whmcs;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
+use Scp\Whmcs\Server\Usage\UsageUpdater;
 
 /**
  * Class Responsibilities:
@@ -16,13 +17,20 @@ class WhmcsEvents
     const USAGE = 'UsageUpdate';
 
     /**
+     * @var UsageUpdater
+     */
+    protected $usage;
+
+    /**
      * @var ServerProvisioner
      */
     protected $provision;
 
     public function __construct(
+        UsageUpdater $usage,
         ServerProvisioner $provision
     ) {
+        $this->usage = $usage;
         $this->provision = $provision;
     }
 
@@ -53,13 +61,10 @@ class WhmcsEvents
 
     public function usage()
     {
-        return 'success';
-        /*
         $billingId = $params['serviceid'];
         return $this->usage->runAndLogErrors()
             ? 'success'
             : 'Error running usage update';
-        */
     }
 
     public static function functions()

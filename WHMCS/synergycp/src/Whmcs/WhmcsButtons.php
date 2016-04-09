@@ -88,6 +88,8 @@ class WhmcsButtons
         return [
             static::IPMI_CLIENT_DELETE,
             static::IPMI_CLIENT_CREATE,
+
+            WhmcsEvents::USAGE,
         ];
     }
 
