@@ -2,12 +2,16 @@
 
 namespace Scp\Whmcs\Whmcs;
 use Scp\Whmcs\Server\ServerService;
+use Scp\Whmcs\Server\Usage\UsageFormatter;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Whmcs\Api;
+use Scp\Whmcs\Database\Database;
 
 class WhmcsTemplates
 {
     const CLIENT_AREA = 'ClientArea';
+
+    const ALPHA_NUM = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
     /**
      * @var Api
@@ -24,22 +28,38 @@ class WhmcsTemplates
      */
     protected $server;
 
+    /**
+     * @var UsageFormatter
+     */
+    protected $format;
+
+    /**
+     * @var Database
+     */
+    protected $database;
+
     public function __construct(
         Api $api,
+        Database $database,
         ClientService $client,
-        ServerService $server
+        ServerService $server,
+        UsageFormatter $format
     ) {
         $this->api = $api;
         $this->client = $client;
         $this->server = $server;
+        $this->format = $format;
+        $this->database = $database;
     }
 
     public function clientArea()
     {
         $server = $this->server->current();
+        $billingId = $this->server->currentBillingId();
+
         $urlAction = sprintf(
             'clientarea.php?action=productdetails&id=%d&modop=custom&a=',
-            $this->server->currentBillingId()
+            $billingId
         );
 
         $apiKey = $this->client->apiKey();
@@ -56,13 +76,34 @@ class WhmcsTemplates
                 'MODULE_FOLDER' => '/modules/servers/synergycp',
                 'apiKey' => $apiKey->key,
                 'apiUrl' => $urlApi,
+                'bandwidth' => $this->clientAreaBandwidth(),
             ],
         ];
     }
 
-    private function generatePassword($length)
+    private function clientAreaBandwidth()
     {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $billingId = $this->server->currentBillingId();
+        $hosting = $this->database->table('tblhosting')
+            ->where('id', $billingId)
+            ->first();
+
+        $used = $hosting->bwusage;
+        $limit = $hosting->bwlimit;
+
+        $dispUsed = $this->format->megaBytesToHuman($used);
+        $dispPct = $limit ? round(100 * $used / $limit, 2) : 0;
+        $dispLimit = $limit ? $this->format->megaBytesToHuman($limit) : null;
+
+        return [
+            'used' => $dispUsed,
+            'percent' => $dispPct,
+            'limit' => $dispLimit,
+        ];
+    }
+
+    private function generatePassword($length, $characters = self::ALPHA_NUM)
+    {
         $charactersLength = strlen($characters);
         $randomString = '';
 

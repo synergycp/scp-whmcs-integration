@@ -8,6 +8,7 @@ use Scp\Server\ServerRepository;
 use Scp\Whmcs\Api;
 use Scp\Whmcs\LogFactory;
 use Scp\Whmcs\Database\Database;
+use Scp\Support\Collection;
 
 class UsageUpdater
 {
@@ -92,9 +93,18 @@ class UsageUpdater
 
         $updates = $this->prepareUpdates($server);
 
-        $this->database->update('tblhosting', $updates, [
-            'id' => $server->billing_id,
-        ]);
+        try {
+            $this->database->table('tblhosting')
+                ->where('id', $billingId)
+                ->update($updates);
+        } catch (\Exception $exc) {
+            $this->log->activity(
+                'SynergyCP: Usage Update failed: %s',
+                $exc->getMessage()
+            );
+
+            return false;
+        }
 
         $this->log->activity('SynergyCP: Completed usage update');
 
@@ -105,8 +115,6 @@ class UsageUpdater
     {
         $bandwidth = $this->getBandwidth($server);
 
-        print_r($bandwidth);
-        die('');
         return [
             //"diskused" => $values['diskusage'],
             //"dislimit" => $values['disklimit'],
@@ -119,13 +127,35 @@ class UsageUpdater
     private function getBandwidth(Server $server)
     {
         $url = sprintf(
-            'server/%d/bandwidth',
+            'server/%d/port',
             $server->id
         );
         $data = [
-            'start' => 'cycle',
+            'is_billable' => true,
         ];
 
-        return $this->api->get($url, $data);
+        $ports = $this->api->get($url, $data)->data()->data;
+
+        $result = new \stdClass;
+        $result->used = 0;
+        $result->limit = $server->max_bandwidth;
+
+        foreach ($ports as $port) {
+            $portUrl = sprintf(
+                '%s/%d/bandwidth',
+                $url,
+                $port->id
+            );
+            $data = [
+                'start' => 'cycle',
+            ];
+
+            $bandwidth = $this->api->get($portUrl, $data)->data();
+            $stats = new Collection($bandwidth->stats);
+
+            $result->used += $stats->sum('sum');
+        }
+
+        return $result;
     }
 }
