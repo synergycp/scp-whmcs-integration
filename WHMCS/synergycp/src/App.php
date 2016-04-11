@@ -35,6 +35,7 @@ class App
     public function __construct(array $params = [])
     {
         $this->singleton(Api::class);
+        $this->singleton(Client\ClientService::class);
         $this->singleton(Whmcs::class, function () use ($params) {
             return new Whmcs($params);
         });

@@ -152,6 +152,16 @@ class Api
         return "$this->url/$path?" . http_build_query($data);
     }
 
+    public function baseUrl()
+    {
+        return $this->url;
+    }
+
+    public function siteUrl()
+    {
+        return substr($this->url, 0, strrpos($this->url, '/'));
+    }
+
     /**
      * @param  static [$instance] set the instance
      *

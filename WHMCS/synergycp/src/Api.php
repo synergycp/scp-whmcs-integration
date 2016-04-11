@@ -53,9 +53,7 @@ class Api extends OriginalApi
         static::instance($this);
 
         $clients = App::get()->make(ClientService::class);
-        $client = $clients->getOrCreate();
-
-        $apiKey = with(new ApiKey)->owner($client)->save();
+        $apiKey = $clients->apiKey();
 
         $api->setApiKey($apiKey->key);
 
