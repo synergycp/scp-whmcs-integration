@@ -12,7 +12,12 @@
       <strong>{$ip->name}</strong><br />
       - Usable IP(s): {$ip->full_ip}<br />
       - Gateway IP: {$ip->gateway}<br />
-      - Subnet Mask: {$ip->subnet_mask}<br /><br />
+      - Subnet Mask: {$ip->subnet_mask}<br />
+      {if $ip->v6_address}
+        - IPv6 Address: {$ip->v6_address}<br />
+        - IPv6 Gateway: {$ip->v6_gateway}<br />
+      {/if}
+      <br />
     {/foreach}
   </div>
 </div>
