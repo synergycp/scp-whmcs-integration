@@ -12,6 +12,11 @@ abstract class ApiModel
     protected $attributes = [];
 
     /**
+     * @var array
+     */
+    protected $dirty = [];
+
+    /**
      * @var bool
      */
     protected $exists = false;
@@ -69,9 +74,10 @@ abstract class ApiModel
     /**
      * @return $this
      */
-    protected function patch()
+    public function patch(array $data = [])
     {
-        $response = $this->api->patch($this->path(), $this->attributes);
+        $data += $this->getAndResetDirty();
+        $response = $this->api->patch($this->path(), $data);
         $this->attributes = (array) $response->data();
 
         return $this;
@@ -91,6 +97,7 @@ abstract class ApiModel
 
     public function setAttribute($attribute, $value)
     {
+        $this->dirty[$attribute] = $value;
         $this->attributes[$attribute] = $value;
     }
 
@@ -107,6 +114,18 @@ abstract class ApiModel
     public function __get($attribute)
     {
         return $this->getAttribute($attribute);
+    }
+
+    /**
+     * @return array
+     */
+    protected function getAndResetDirty()
+    {
+        $dirty = $this->dirty;
+
+        $this->dirty = [];
+
+        return $dirty;
     }
 
     /**

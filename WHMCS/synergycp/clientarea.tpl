@@ -33,14 +33,14 @@
       {$bandwidth.used} of {$bandwidth.limit} used
     {else}
       {$bandwidth.used} used
-    {/if} - 
+    {/if} -
     <a target="_blank" href="{$url_action}btn_manage">
       view graph</a>
     <br /><br />
   </div>
 </div>
 
-{if $server->ipmi_access}
+{if $server->ipmi_access_now}
   <div class="row">
     <div class="col-sm-5 text-right">
       <strong>IPMI Details</strong>
@@ -56,7 +56,7 @@
   </div>
 {/if}
 
-{if $server->pxe_access}
+{if $server->pxe_access_now}
   <div class="row" id="scp-pxe-status">
     <div class="col-sm-5 text-right">
       <strong>OS Reload</strong>

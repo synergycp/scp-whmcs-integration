@@ -118,12 +118,19 @@ class UsageUpdater
         return [
             //"diskused" => $values['diskusage'],
             //"dislimit" => $values['disklimit'],
-            'bwusage' => $this->format->bitsToMB($bandwidth->used),
-            'bwlimit' => $this->format->bitsToMB($bandwidth->limit, 3),
+            'bwusage' => $this->format->bitsToMB($bandwidth->used, 3) * 8,
+            'bwlimit' => $this->format->bitsToMB($bandwidth->limit, 3) * 8,
             'lastupdate' => 'now()',
         ];
     }
 
+    /**
+     * Get bandwidth usage data for the given Server.
+     *
+     * @param  Server $server
+     *
+     * @return stdClass
+     */
     private function getBandwidth(Server $server)
     {
         $url = sprintf(
@@ -138,22 +145,19 @@ class UsageUpdater
 
         $result = new \stdClass;
         $result->used = 0;
-        $result->limit = $server->max_bandwidth;
+        $result->limit = 0;
 
         foreach ($ports as $port) {
             $portUrl = sprintf(
-                '%s/%d/bandwidth',
+                '%s/%d/bandwidth/usage',
                 $url,
                 $port->id
             );
-            $data = [
-                'start' => 'cycle',
-            ];
 
             $bandwidth = $this->api->get($portUrl, $data)->data();
-            $stats = new Collection($bandwidth->stats);
 
-            $result->used += $stats->sum('sum');
+            $result->used += $bandwidth->used;
+            $result->limit += $bandwidth->max;
         }
 
         return $result;

@@ -93,6 +93,7 @@ class WhmcsTemplates
 
         $dispUsed = $this->format->megaBytesToHuman($used);
         $dispPct = $limit ? round(100 * $used / $limit, 2) : 0;
+        $dispPct = min($dispPct, 100);
         $dispLimit = $limit ? $this->format->megaBytesToHuman($limit) : null;
 
         return [
