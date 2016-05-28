@@ -83,7 +83,7 @@ class ServerProvisioner
             'ip_group_billing' => $ipGroup,
         ], [
             'ips_billing' => $ips,
-            'pxe_script_billing' => $osChoice,
+            'pxe_profile_billing' => $osChoice,
             'port_speed_billing' => $portSpeed,
             'billing_id' => $this->config->get('serviceid'),
             'nickname' => $nickname,
