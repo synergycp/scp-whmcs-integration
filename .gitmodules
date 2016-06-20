@@ -1,0 +1,3 @@
+[submodule "Scp"]
+	path = Scp
+	url = git@github.com:cabloo/scp-php-api.git
