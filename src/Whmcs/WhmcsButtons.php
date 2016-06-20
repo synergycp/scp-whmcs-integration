@@ -7,6 +7,7 @@ use Scp\Server\ServerRepository;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Whmcs\Api;
+use Scp\Whmcs\Server\ServerService;
 use Scp\Api\ApiKey;
 use Scp\Api\ApiSingleSignOn;
 
@@ -38,37 +39,28 @@ class WhmcsButtons
     protected $api;
 
     /**
-     * @var Whmcs
-     */
-    protected $whmcs;
-
-    /**
      * @var ClientService
      */
     protected $clients;
 
     /**
-     * @var ServerRepository
+     * @var ServerService
      */
-    protected $servers;
+    protected $server;
 
     public function __construct(
         Api $api,
-        Whmcs $whmcs,
         ClientService $clients,
-        ServerRepository $servers
+        ServerService $server
     ) {
         $this->api = $api;
-        $this->whmcs = $whmcs;
+        $this->server = $server;
         $this->clients = $clients;
-        $this->servers = $servers;
     }
 
     public function client()
     {
-        $billingId = $this->whmcs->getParam('serviceid');
-        $server = $this->servers->findByBillingId($billingId);
-
+        $server = $this->getServer();
         $actions = $this->otherActions()
           + $this->switchActions($server)
           + $this->ipmiActions($server)
@@ -88,6 +80,14 @@ class WhmcsButtons
         return [
             static::IPMI_CLIENT_DELETE,
             static::IPMI_CLIENT_CREATE,
+
+            // Debug WHMCS Events:
+            // /*
+            WhmcsEvents::USAGE,
+            WhmcsEvents::TERMINATE,
+            WhmcsEvents::SUSPEND,
+            WhmcsEvents::UNSUSPEND,
+            // */
         ];
     }
 
@@ -100,7 +100,7 @@ class WhmcsButtons
 
     protected function switchActions(Server $server)
     {
-        if (!$server->switch_access) {
+        if (!$server->switch_access_now) {
             return [];
         }
 
@@ -112,7 +112,7 @@ class WhmcsButtons
 
     protected function ipmiActions(Server $server)
     {
-        if (!$server->ipmi_access) {
+        if (!$server->ipmi_access_now) {
             return [];
         }
 
@@ -128,7 +128,7 @@ class WhmcsButtons
 
     protected function pxeActions(Server $server)
     {
-        if (!$server->pxe_access) {
+        if (!$server->pxe_access_now) {
             return [];
         }
 
@@ -251,12 +251,29 @@ class WhmcsButtons
     */
     public function loginLink()
     {
-        if (isset($_GET['login_service'])) {
+        if (isset($_GET['login_client'])) {
             $this->manage();
         }
 
-        echo '<a href="?'.$_SERVER['QUERY_STRING'].'&login_service" '
-            .'target="blank">Login as Client on SynergyCP</a>';
+        if (isset($_GET['login_admin'])) {
+            $this->manageAsAdmin();
+        }
+        ?>
+
+        <div class="btn-group" style="margin-bottom: 10px">
+            <div class="btn-dropdown">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Manage on SynergyCP
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?<?php echo $_SERVER['QUERY_STRING'] ?>&login_client" target="_blank">As Client</a></li>
+                    <li><a href="?<?php echo $_SERVER['QUERY_STRING'] ?>&login_admin" target="_blank">As Administrator</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <?php
     }
 
     public function portPowerOn()
@@ -279,9 +296,6 @@ class WhmcsButtons
 
     public function manage()
     {
-        // Clear output buffer so no other page contents show.
-        ob_clean();
-
         $client = $this->clients->getOrCreate();
         $server = $this->getServer();
 
@@ -294,6 +308,27 @@ class WhmcsButtons
         }
 
         $url = $sso->url();
+
+        $this->transferTo($url);
+    }
+
+    public function manageAsAdmin()
+    {
+        $server = $this->getServer();
+
+        $url = sprintf(
+            '%s/admin/servers/manage/%d',
+            $this->api->siteUrl(),
+            $server->id
+        );
+
+        $this->transferTo($url);
+    }
+
+    protected function transferTo($url, $linkText = 'SynergyCP')
+    {
+        // Clear output buffer so no other page contents show.
+        ob_clean();
 
         die(sprintf(
             '<script type="text/javascript">window.location.href="%s"</script>'.
@@ -334,13 +369,12 @@ class WhmcsButtons
      */
     protected function getServer()
     {
-        $billingId = $this->whmcs->getParam('serviceid');
-        $server = $this->servers->findByBillingId($billingId);
+        $server = $this->server->current();
 
         if (!$server) {
             throw new \RuntimeException(sprintf(
                 'Server with billing ID %s does not exist on SynergyCP.',
-                $billingId
+                $this->server->currentBillingId()
             ));
         }
 

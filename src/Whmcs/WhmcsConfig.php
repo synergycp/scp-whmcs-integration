@@ -20,11 +20,25 @@ class WhmcsConfig
     const PXE_ACCESS = 4;
     const IPMI_ACCESS = 5;
     const SWITCH_ACCESS = 6;
+    const DELETE_ACTION = 7;
+
+    const DELETE_ACTION_WIPE = 0;
+    const DELETE_ACTION_TICKET = 1;
+    const DELETE_DESCR_WIPE = 'Wipe Server on Synergy';
+    const DELETE_DESCR_TICKET = 'Open Cancellation Ticket';
+
+    /**
+     * @var array
+     */
+    protected $deleteActionMap = [
+        self::DELETE_DESCR_WIPE => self::DELETE_ACTION_WIPE,
+        self::DELETE_DESCR_TICKET => self::DELETE_ACTION_TICKET,
+    ];
 
     /**
      * @var int
      */
-    protected $countOptions = self::SWITCH_ACCESS;
+    protected $countOptions = self::DELETE_ACTION;
 
     /**
      * @var Whmcs
@@ -51,6 +65,17 @@ class WhmcsConfig
         switch ($key) {
         case static::TICKET_DEPT:
             return (string) $this->getDepartmentIdByName($value);
+        case static::DELETE_ACTION:
+            $mapped = array_get($this->deleteActionMap, $value);
+
+            if ($mapped !== null) {
+                return $mapped;
+            }
+
+            throw new \Exception(sprintf(
+                'Invalid value for Delete Action: %s',
+                $value
+            ));
         }
 
         return $value;
@@ -104,6 +129,15 @@ class WhmcsConfig
         case static::SWITCH_ACCESS:
             return $config['Switch Access'] = [
                 'Type' => 'yesno',
+            ];
+        case static::DELETE_ACTION:
+            return $config['Termination Action'] = [
+                'Type' => 'dropdown',
+                'Description' => 'When a product is terminated, this action will occur.',
+                'Options' => implode(',', [
+                    static::DELETE_DESCR_WIPE,
+                    static::DELETE_DESCR_TICKET,
+                ]),
             ];
         }
     }
