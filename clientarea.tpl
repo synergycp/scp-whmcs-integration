@@ -1,8 +1,6 @@
 {* This CSS is important for proper rendering of hidden elements on the page, so must be at the top. *}
 <link type="text/css" rel="stylesheet" href="{$WEB_ROOT}{$MODULE_FOLDER}/assets/base.css" />
 
-<hr />
-
 <div class="row">
   <div class="col-sm-5 text-right">
     <strong>IP Allocation</strong>

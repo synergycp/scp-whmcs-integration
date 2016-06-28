@@ -54,7 +54,10 @@ class WhmcsTemplates
 
     public function clientArea()
     {
-        $server = $this->server->current();
+        if (!$server = $this->server->current()) {
+            return;
+        }
+
         $billingId = $this->server->currentBillingId();
 
         $urlAction = sprintf(

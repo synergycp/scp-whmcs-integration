@@ -60,14 +60,15 @@ class WhmcsButtons
 
     public function client()
     {
-        $server = $this->getServer();
-        $actions = $this->otherActions()
+        if (!$server = $this->server->current()) {
+            return [];
+        }
+
+        return $this->otherActions()
           + $this->switchActions($server)
           + $this->ipmiActions($server)
           + $this->pxeActions($server)
           ;
-
-        return $actions;
     }
 
     /**
@@ -314,7 +315,11 @@ class WhmcsButtons
 
     public function manageAsAdmin()
     {
-        $server = $this->getServer();
+        try {
+            $server = $this->server->currentOrFail();
+        } catch (\RuntimeException $exc) {
+            $this->exitWithMessage($exc->getMessage());
+        }
 
         $url = sprintf(
             '%s/admin/servers/manage/%d',
@@ -327,16 +332,21 @@ class WhmcsButtons
 
     protected function transferTo($url, $linkText = 'SynergyCP')
     {
-        // Clear output buffer so no other page contents show.
-        ob_clean();
-
-        die(sprintf(
+        $this->exitWithMessage(sprintf(
             '<script type="text/javascript">window.location.href="%s"</script>'.
             'Transfer to <a href="%s">%s</a>.',
             $url,
             $url,
             'SynergyCP'
         ));
+    }
+
+    protected function exitWithMessage($message)
+    {
+        // Clear output buffer so no other page contents show.
+        ob_clean();
+
+        die($message);
     }
 
     protected function switchControl(array $data)
@@ -369,15 +379,6 @@ class WhmcsButtons
      */
     protected function getServer()
     {
-        $server = $this->server->current();
-
-        if (!$server) {
-            throw new \RuntimeException(sprintf(
-                'Server with billing ID %s does not exist on SynergyCP.',
-                $this->server->currentBillingId()
-            ));
-        }
-
-        return $server;
+        return $this->server->currentOrFail();
     }
 }

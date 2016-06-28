@@ -65,12 +65,9 @@ SCP.ClientArea = {
 
     this.statusElem().stop(true, false).slideDown(500, resetHeight);
     this.formElem().stop(true, false).slideUp(500, resetHeight);
+    this.setProgress(install.percent);
 
-    var percent = 100 * parseInt(install.step) / parseInt(install.steps);
-
-    this.setProgress(percent);
-
-    $('#scp-pxe-install-name').text(install.script.name);
+    $('#scp-pxe-install-name').text(install.profile.name);
     $('#scp-pxe-install-status').text(install.step_desc);
   },
   setProgress: function (percent) {
@@ -152,7 +149,7 @@ SCP.ClientArea = {
 
     var serverId = this.options.server_id;
     var data = {
-      script_id: osChoice.id,
+      pxe_profile_id: osChoice.id,
       edition_id: editionChoice ? editionChoice.id : null,
       license_key: this.licenseKeyElem().val(),
       password: this.passwordElem().val()

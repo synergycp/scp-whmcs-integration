@@ -28,7 +28,7 @@ class ClientService
     protected $client = self::NOT_CHECKED;
 
     /**
-     * @var ApiKey
+     * @var ApiKey|null
      */
     protected $apiKey;
 
