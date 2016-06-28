@@ -42,4 +42,21 @@ class ServerService
 
         return $this->servers->findByBillingId($billingId);
     }
+
+    /**
+     * @return Server
+     *
+     * @throws \RuntimeException
+     */
+    public function currentOrFail()
+    {
+        if (!$server = $this->current()) {
+            throw new \RuntimeException(sprintf(
+                'Server with billing ID %s does not exist on SynergyCP.',
+                $this->server->currentBillingId()
+            ));
+        }
+
+        return $server;
+    }
 }
