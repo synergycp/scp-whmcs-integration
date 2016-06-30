@@ -154,7 +154,7 @@ class UsageUpdater
                 $port->id
             );
 
-            $bandwidth = $this->api->get($portUrl, $data)->data();
+            $bandwidth = $this->api->get($portUrl)->data();
 
             $result->used += $bandwidth->used;
             $result->limit += $bandwidth->max;

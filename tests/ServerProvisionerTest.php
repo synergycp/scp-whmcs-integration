@@ -1,5 +1,6 @@
 <?php
 
+use Scp\Whmcs\Database\Database;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Ticket\TicketManager;
@@ -7,60 +8,95 @@ use Scp\Whmcs\Client\ClientService;
 use Scp\Server\Server;
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
 use Scp\Client\Client;
+use Scp\Whmcs\Whmcs\WhmcsConfig;
+use Illuminate\Database\Query\Builder;
 
 class ServerProvisionerTest extends TestCase
 {
+    public function setUp()
+    {
+        parent::setUp();
+
+        $this->server = Mockery::mock(Server::class);
+        $this->client = Mockery::mock(Client::class);
+        $this->provision = new ServerProvisioner(
+            $this->whmcs = Mockery::mock(Whmcs::class),
+            $this->database = Mockery::mock(Database::class),
+            $this->config = Mockery::mock(WhmcsConfig::class),
+            $this->clients = Mockery::mock(ClientService::class),
+            $this->tickets = Mockery::mock(TicketManager::class),
+            $this->orig = Mockery::mock(OriginalServerProvisioner::class)
+        );
+    }
+
     /**
      * @param array $input
      * @param array $serverInfo
      *
      * @dataProvider dataProvision
      */
-    public function testProvision(array $input, array $serverInfo)
+    public function testProvision(array $config, array $params, array $serverFilter, array $serverInfo)
     {
-        $orig = Mockery::mock(OriginalServerProvisioner::class);
-        $whmcs = Mockery::mock(Whmcs::class);
-        $server = Mockery::mock(Server::class);
-        $client = Mockery::mock(Client::class);
-        $tickets = Mockery::mock(TicketManager::class);
-        $clients = Mockery::mock(ClientService::class);
-        $provision = new ServerProvisioner($whmcs, $clients, $tickets, $orig);
-        $orig->shouldReceive('server')
-            ->with($serverInfo, $client)
-            ->andReturn($server);
-        $clients->shouldReceive('getOrCreate')
-            ->andReturn($client);
+        $this->setupConfig($config, $params);
 
-        $provision->create($input);
+        $this->orig->shouldReceive('server')
+            ->with($serverFilter, $serverInfo, $this->client)
+            ->andReturn($this->server);
+        $this->clients->shouldReceive('getOrCreate')
+            ->andReturn($this->client);
+
+        $this->provision->create();
     }
 
     public function dataProvision()
     {
+        $opt = 'configoption';
+
         return [
             [
                 [
-                    'configoptions' => [
-                        'Operating System' => $osChoice = 'windows-2008',
-                        'Memory' => $ram = 'ram',
-                        'Port Speed' => $portSpeed = 'speed-1000',
-                        'IPv4 Addresses' => $ips = 'ip-28',
-                    ],
-                    'configoption1' => $cpu = 'cpu-',
+                    'Operating System' => $osChoice = 'windows-2008',
+                    'Memory' => $ram = 'ram',
+                    'Network Port Speed' => $portSpeed = 'speed-1000',
+                    'Datacenter Location' => $loc = 'LOC-LA',
+                    'IPv4 Addresses' => $ips = 'ip-28',
+                    'Bandwidth' => $maxBandwidth = '10TB',
+                ], [
+                    $opt.WhmcsConfig::CPU_BILLING_ID => $cpu = 'cpu-',
+                    $opt.WhmcsConfig::PXE_ACCESS => $accessPxe = true,
+                    $opt.WhmcsConfig::IPMI_ACCESS => $accessIpmi = true,
+                    $opt.WhmcsConfig::SWITCH_ACCESS => $accessSwitch = true,
                     'clientsdetails' => [
                         'email' => 'zanehoop@gmail.com',
                         'firstname' => 'Zane',
                         'lastname' => 'Hooper',
                     ],
-                    'userid' => $clientBillingId = '10',
+                    'userid' => '10',
+                    'pid' => 1,
                     'serviceid' => $billingId = '1',
+                    'domain' => $nickname = '_domain_',
+                    'password' => $password = '_password_',
                 ], [
-                    'ips' => $ips,
-                    'mem' => $ram,
-                    'cpu' => $cpu,
-                    'disks' => [],
-                    'pxe_script' => $osChoice,
-                    'port_speed' => $portSpeed,
-                    'billing_id' => $billingId,
+                    'mem_billing' => $ram,
+                    'cpu_billing' => $cpu,
+                    'disks_billing' => [],
+                    'addons_billing' => [],
+                    'ip_group_billing' => $loc,
+                ], [
+                    'ips_billing' => $ips,
+                    'pxe_profile_billing' => $osChoice,
+                    'port_speed_billing' => $portSpeed,
+                    'nickname' => $nickname,
+                    'password' => $password,
+                    'billing' => [
+                        'id' => $billingId,
+                        'max_bandwidth' => $maxBandwidth,
+                    ],
+                    'access' => [
+                        'pxe' => $accessPxe,
+                        'ipmi' => $accessIpmi,
+                        'switch' => $accessSwitch,
+                    ]
                 ],
             ],
         ];
@@ -72,34 +108,65 @@ class ServerProvisionerTest extends TestCase
      *
      * @dataProvider dataProvisionTicket
      */
-    public function testProvisionTicket(array $input, array $whmcsConfig, array $ticketInfo)
+    public function testProvisionTicket($productName, array $config, array $params, array $whmcsConfig, array $ticketInfo)
     {
-        $orig = Mockery::mock(OriginalServerProvisioner::class);
-        $whmcs = Mockery::mock(Whmcs::class);
-        $client = Mockery::mock(Client::class);
-        $tickets = Mockery::mock(TicketManager::class);
-        $clients = Mockery::mock(ClientService::class);
-        $provision = new ServerProvisioner($whmcs, $clients, $tickets, $orig);
-        $orig->shouldReceive('server')->andReturn(null);
-        $whmcs->shouldReceive('configOptions')->andReturn($whmcsConfig);
-        $tickets->shouldReceive('createAndLogErrors')->with($ticketInfo);
-        $clients->shouldReceive('getOrCreate')->andReturn($client);
+        $this->setupConfig($config, $params);
 
-        $provision->create($input);
+        $this->orig->shouldReceive('server')->andReturn(null);
+        $this->whmcs->shouldReceive('configOptions')->andReturn($whmcsConfig);
+        $this->tickets->shouldReceive('createAndLogErrors')->with($ticketInfo);
+        $this->clients->shouldReceive('getOrCreate')->andReturn($this->client);
+        $this->query = Mockery::mock(Builder::class);
+        $this->database->shouldReceive('table')
+            ->once()
+            ->with('tblproducts')
+            ->andReturn($this->query)
+            ;
+        $this->query->shouldReceive('select')
+            ->once()
+            ->with('name')
+            ->andReturn($this->query)
+            ;
+        $this->query->shouldReceive('where')
+            ->once()
+            ->with('id', $params['pid'])
+            ->andReturn($this->query)
+            ;
+        $this->query->shouldReceive('limit')
+            ->once()
+            ->with(1)
+            ->andReturn($this->query)
+            ;
+        $result = new stdClass;
+        $result->name = $productName;
+        $this->query->shouldReceive('first')
+            ->once()
+            ->with()
+            ->andReturn($result)
+            ;
+
+        $this->provision->create();
     }
 
     public function dataProvisionTicket()
     {
+        $opt = 'configoption';
         return [
             [
-                [
-                    'configoptions' => [
-                        'Operating System' => 'windows-2008',
-                        'Memory' => 'ram',
-                        'Port Speed' => 'speed-1000',
-                        'IPv4 Addresses' => 'ip-28',
-                    ],
-                    'configoption1' => 'cpu-',
+                $productName = '_test name_',
+                $configOpts = [
+                    $osLabel = 'Operating System' => $osChoice = 'windows-2008',
+                    $memLabel = 'Memory' => $ram = 'ram',
+                    $portLabel = 'Network Port Speed' => $portSpeed = 'speed-1000',
+                    $locLabel = 'Datacenter Location' => $loc = 'LOC-LA',
+                    $ipLabel = 'IPv4 Addresses' => $ips = 'ip-28',
+                    $bandwidthLabel = 'Bandwidth' => $maxBandwidth = '10TB',
+                ], [
+                    $opt.WhmcsConfig::CPU_BILLING_ID => 'cpu-',
+                    $opt.WhmcsConfig::PXE_ACCESS => true,
+                    $opt.WhmcsConfig::IPMI_ACCESS => true,
+                    $opt.WhmcsConfig::SWITCH_ACCESS => true,
+                    'configoptions' => $configOpts,
                     'clientsdetails' => [
                         'email' => 'zanehoop@gmail.com',
                         'firstname' => 'Zane',
@@ -107,32 +174,63 @@ class ServerProvisionerTest extends TestCase
                     ],
                     'userid' => $clientId = '10',
                     'serviceid' => $billingId = '1',
+                    'domain' => $domain = '_domain_',
+                    'password' => $password = '_password_',
+                    'pid' => 1,
                 ], [
-                    $osLabel = 'Operating System' => [
-                        'windows-2008' => $osName = 'Windows 2008',
+                    $osLabel => [
+                        $osChoice => $osName = 'Windows 2008',
                     ],
-                    $memLabel = 'Memory' => [
-                        'ram' => $memName = 'Ram Test',
+                    $memLabel => [
+                        $ram => $memName = 'Ram Test',
                     ],
-                    $portLabel = 'Port Speed' => [
-                        'speed-1000' => $portName = 'Speed Test',
+                    $portLabel => [
+                        $portSpeed => $portName = 'Speed Test',
                     ],
-                    $ipLabel = 'IPv4 Addresses' => [
-                        'ip-28' => $ipName = 'IP Test',
+                    $locLabel => [
+                        $loc => $locName = 'Location Test',
+                    ],
+                    $ipLabel => [
+                        $ips => $ipName = 'IP Test',
+                    ],
+                    $bandwidthLabel => [
+                        $maxBandwidth => $bandwidthName = 'IP Test',
                     ],
                 ], [
                     'clientid' => $clientId,
                     'subject' => 'Server provisioning request',
                     'message' => "Your server has been queued for setup and will be processed shortly.
 
+Product Name: $productName
 Billing ID: $billingId
+Hostname: $domain
+Root Password: $password
 $osLabel: $osName
 $memLabel: $memName
 $portLabel: $portName
+$locLabel: $locName
 $ipLabel: $ipName
+$bandwidthLabel: $bandwidthName
 ",
                 ],
             ],
         ];
+    }
+
+
+    private function setupConfig(array $config, array $params)
+    {
+        $this->config->shouldReceive('options')
+            ->andReturn($config);
+        $this->config->shouldReceive('get')
+            ->andReturnUsing(function ($key) use (&$params) {
+                return $params[$key];
+            });
+        $this->config->shouldReceive('option')
+            ->andReturnUsing(function ($key) use (&$params) {
+                return $params['configoption'.$key];
+            });
+        $this->whmcs->shouldReceive('getParams')
+            ->andReturn($params);
     }
 }
