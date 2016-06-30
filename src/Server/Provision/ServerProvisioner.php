@@ -3,6 +3,7 @@
 namespace Scp\Whmcs\Server\Provision;
 
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
+use Scp\Whmcs\Database\Database;
 use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Whmcs\WhmcsConfig;
@@ -37,8 +38,14 @@ class ServerProvisioner
      */
     protected $config;
 
+    /**
+     * @var Database
+     */
+    protected $database;
+
     public function __construct(
         Whmcs $whmcs,
+        Database $database,
         WhmcsConfig $config,
         ClientService $client,
         TicketManager $tickets,
@@ -48,6 +55,7 @@ class ServerProvisioner
         $this->config = $config;
         $this->client = $client;
         $this->tickets = $tickets;
+        $this->database = $database;
         $this->provision = $provision;
     }
 
@@ -85,12 +93,17 @@ class ServerProvisioner
             'ips_billing' => $ips,
             'pxe_profile_billing' => $osChoice,
             'port_speed_billing' => $portSpeed,
-            'billing_id' => $this->config->get('serviceid'),
             'nickname' => $nickname,
             'password' => $password,
-            'pxe_access' => $this->config->option(WhmcsConfig::PXE_ACCESS),
-            'ipmi_access' => $this->config->option(WhmcsConfig::IPMI_ACCESS),
-            'switch_access' => $this->config->option(WhmcsConfig::SWITCH_ACCESS),
+            'billing' => [
+                'id' => $this->config->get('serviceid'),
+                'max_bandwidth' => $choices['Bandwidth'],
+            ],
+            'access' => [
+                'pxe' => $this->config->option(WhmcsConfig::PXE_ACCESS),
+                'ipmi' => $this->config->option(WhmcsConfig::IPMI_ACCESS),
+                'switch' => $this->config->option(WhmcsConfig::SWITCH_ACCESS),
+            ],
         ], $client);
 
         if (!$server) {
@@ -155,14 +168,12 @@ class ServerProvisioner
 
     private function getProductName(array $params)
     {
-        $productId = $params['pid'];
-
-        $query = "SELECT name FROM tblproducts WHERE id = '$productId' LIMIT 1";
-        $query = mysql_query($query);
-        $result = mysql_fetch_object($query);
-
-        if ($result) {
-            return $result->name;
-        }
+        return $this->database->table('tblproducts')
+            ->select('name')
+            ->where('id', $params['pid'])
+            ->limit(1)
+            ->first()
+            ->name
+            ;
     }
 }
