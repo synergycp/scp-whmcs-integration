@@ -12,7 +12,7 @@ class WhmcsConfig
     const FORM = 'ConfigOptions';
 
     /**
-     * Config Options.
+     * Config Options (make sure to update count below when adding).
      */
     const CPU_BILLING_ID = 1;
     const API_USER = 2;
@@ -21,6 +21,19 @@ class WhmcsConfig
     const IPMI_ACCESS = 5;
     const SWITCH_ACCESS = 6;
     const DELETE_ACTION = 7;
+    const PRE_INSTALL = 8;
+
+    /**
+     * The 1-based index of the last Config Option.
+     *
+     * @var int
+     */
+    protected $countOptions = self::PRE_INSTALL;
+
+    const API_USER_DESC = 'This must be an administrator user with API access enabled.';
+    const TICKET_DEPT_DESC = 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.';
+    const DELETE_ACTION_DESC = 'When a product is terminated, this action will occur.';
+    const PRE_INSTALL_DESC = 'Billing ID of an OS Reload that will be run before each install, e.g. format-quick. Multiple can be separated by a comma.';
 
     const DELETE_ACTION_WIPE = 0;
     const DELETE_ACTION_TICKET = 1;
@@ -34,11 +47,6 @@ class WhmcsConfig
         self::DELETE_DESCR_WIPE => self::DELETE_ACTION_WIPE,
         self::DELETE_DESCR_TICKET => self::DELETE_ACTION_TICKET,
     ];
-
-    /**
-     * @var int
-     */
-    protected $countOptions = self::DELETE_ACTION;
 
     /**
      * @var Whmcs
@@ -110,12 +118,12 @@ class WhmcsConfig
             return $config['API User'] = [
                 'Type' => 'text',
                 'Size' => '50',
-                'Description' => 'This must be an administrator user with API access enabled.',
+                'Description' => static::API_USER_DESC,
             ];
         case static::TICKET_DEPT:
             return $config['Ticket Department'] = [
                 'Type' => 'dropdown',
-                'Description' => 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.',
+                'Description' => static::TICKET_DEPT_DESC,
                 'Options' => $this->getDepartmentNames()->implode(','),
             ];
         case static::PXE_ACCESS:
@@ -133,11 +141,17 @@ class WhmcsConfig
         case static::DELETE_ACTION:
             return $config['Termination Action'] = [
                 'Type' => 'dropdown',
-                'Description' => 'When a product is terminated, this action will occur.',
+                'Description' => static::DELETE_ACTION_DESC,
                 'Options' => implode(',', [
                     static::DELETE_DESCR_WIPE,
                     static::DELETE_DESCR_TICKET,
                 ]),
+            ];
+        case static::PRE_INSTALL:
+            return $config['Pre-OS install'] = [
+                'Type' => 'text',
+                'Size' => '50',
+                'Description' => self::PRE_INSTALL_DESC,
             ];
         }
     }

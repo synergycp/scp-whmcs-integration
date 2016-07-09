@@ -1,5 +1,9 @@
 <?php
 
+use Scp\Api\ApiQuery;
+use Scp\Api\Pagination\ApiPaginator;
+use Scp\Server\Install;
+use Scp\Support\Collection;
 use Scp\Whmcs\Database\Database;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Whmcs\Whmcs;
@@ -35,7 +39,7 @@ class ServerProvisionerTest extends TestCase
      *
      * @dataProvider dataProvision
      */
-    public function testProvision(array $config, array $params, array $serverFilter, array $serverInfo)
+    public function testProvision(array $config, array $params, array $serverFilter, array $serverInfo, array $extraInstalls)
     {
         $this->setupConfig($config, $params);
 
@@ -44,6 +48,29 @@ class ServerProvisionerTest extends TestCase
             ->andReturn($this->server);
         $this->clients->shouldReceive('getOrCreate')
             ->andReturn($this->client);
+
+        $installQuery = Mockery::mock(ApiQuery::class);
+        $installs = Mockery::mock(ApiPaginator::class);
+        $collect = Mockery::mock(Collection::class);
+        $installQuery->shouldReceive('get')->once()->andReturn($installs);
+        foreach ($extraInstalls as $postData) {
+            $this->server->shouldReceive('installs')
+                ->andReturn($installQuery);
+            $install = Mockery::mock(Install::class);
+            $installs->shouldReceive('items')
+                ->once()
+                ->andReturn($collect);
+            $collect->shouldReceive('last')
+                ->once()
+                ->andReturn($install);
+            $installQuery->shouldReceive('model')
+                ->andReturn($install);
+            $install->shouldReceive('save')
+                ->with($postData);
+            $install->shouldReceive('getAttribute')
+                ->with('id')
+                ->andReturn($postData['parent']['id']);
+        }
 
         $this->provision->create();
     }
@@ -66,6 +93,7 @@ class ServerProvisionerTest extends TestCase
                     $opt.WhmcsConfig::PXE_ACCESS => $accessPxe = true,
                     $opt.WhmcsConfig::IPMI_ACCESS => $accessIpmi = true,
                     $opt.WhmcsConfig::SWITCH_ACCESS => $accessSwitch = true,
+                    $opt.WhmcsConfig::PRE_INSTALL => $preInstall = 'test',
                     'clientsdetails' => [
                         'email' => 'zanehoop@gmail.com',
                         'firstname' => 'Zane',
@@ -84,7 +112,7 @@ class ServerProvisionerTest extends TestCase
                     'ip_group_billing' => $loc,
                 ], [
                     'ips_billing' => $ips,
-                    'pxe_profile_billing' => $osChoice,
+                    'pxe_profile_billing' => $preInstall,
                     'port_speed_billing' => $portSpeed,
                     'nickname' => $nickname,
                     'password' => $password,
@@ -97,7 +125,13 @@ class ServerProvisionerTest extends TestCase
                         'ipmi' => $accessIpmi,
                         'switch' => $accessSwitch,
                     ]
-                ],
+                ], [[
+                    'pxe_profile_billing' => $osChoice,
+                    'password' => $password,
+                    'parent' => [
+                        'id' => 1,
+                    ],
+                ]],
             ],
         ];
     }
@@ -166,6 +200,7 @@ class ServerProvisionerTest extends TestCase
                     $opt.WhmcsConfig::PXE_ACCESS => true,
                     $opt.WhmcsConfig::IPMI_ACCESS => true,
                     $opt.WhmcsConfig::SWITCH_ACCESS => true,
+                    $opt.WhmcsConfig::PRE_INSTALL => '',
                     'configoptions' => $configOpts,
                     'clientsdetails' => [
                         'email' => 'zanehoop@gmail.com',

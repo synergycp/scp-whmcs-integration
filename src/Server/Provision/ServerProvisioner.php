@@ -14,6 +14,11 @@ use Scp\Support\Collection;
 class ServerProvisioner
 {
     /**
+     * @var string
+     */
+    protected $sep = ',';
+
+    /**
      * @var Whmcs
      */
     protected $whmcs;
@@ -68,7 +73,14 @@ class ServerProvisioner
     {
         $choices = $this->config->options();
         $params = $this->whmcs->getParams();
-        $osChoice = $choices['Operating System'];
+        $osChoicesString = sprintf(
+            '%s%s%s',
+            $this->config->option(WhmcsConfig::PRE_INSTALL),
+            $this->sep,
+            $choices['Operating System']
+        );
+        $osChoices = array_filter(explode($this->sep, $osChoicesString));
+        $osChoice = array_shift($osChoices);
         $ram = $choices['Memory'];
         $disks = $this->multiChoice($choices, "SSD Bay %d");
         $addons = $this->multiChoice($choices, "Add On %d");
@@ -111,6 +123,20 @@ class ServerProvisioner
 
             return;
         }
+
+        $choices = new Collection($osChoices);
+        $choices->reduce(function ($install, $choice) use ($password, $server) {
+            $install = $install ?: $server->installs()->get()->items()->last();
+            $install = $server->installs()->model()->save([
+                'pxe_profile_billing' => trim($choice),
+                'parent' => [
+                    'id' => $install->id,
+                ],
+                'password' => $password,
+            ]);
+
+            return $install;
+        });
 
         return $server;
     }
