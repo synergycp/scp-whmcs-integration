@@ -8,9 +8,12 @@ use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Whmcs\WhmcsConfig;
 use Scp\Whmcs\Client\ClientService;
-use Scp\Client\Client;
 use Scp\Support\Collection;
+use Scp\Server\Server;
 
+/**
+ * Provision a Server for WHMCS.
+ */
 class ServerProvisioner
 {
     /**
@@ -48,6 +51,14 @@ class ServerProvisioner
      */
     protected $database;
 
+    /**
+     * @param Whmcs                     $whmcs
+     * @param Database                  $database
+     * @param WhmcsConfig               $config
+     * @param ClientService             $client
+     * @param TicketManager             $tickets
+     * @param OriginalServerProvisioner $provision
+     */
     public function __construct(
         Whmcs $whmcs,
         Database $database,
@@ -65,8 +76,6 @@ class ServerProvisioner
     }
 
     /**
-     * @param array $params
-     *
      * @return Server|null
      */
     public function create()
@@ -81,27 +90,129 @@ class ServerProvisioner
         );
         $osChoices = array_filter(explode($this->sep, $osChoicesString));
         $osChoice = array_shift($osChoices);
-        $ram = $choices['Memory'];
-        $disks = $this->multiChoice($choices, "SSD Bay %d");
-        $addons = $this->multiChoice($choices, "Add On %d");
 
-        $cpu = $this->config->option(WhmcsConfig::CPU_BILLING_ID);
-
-        $portSpeed = $choices['Network Port Speed'];
-        $ips = $choices['IPv4 Addresses'];
-        $ipGroup = $choices['Datacenter Location'];
-        $nickname = $params['domain'];
         $password = $params['password'];
 
-        $client = $this->client->getOrCreate();
+        $server = $this->provision->server(
+            $this->getFilters(),
+            $this->getServerSettings($osChoice, $password),
+            $this->client->getOrCreate()
+        );
 
-        $server = $this->provision->server([
+        if (!$server) {
+            $this->createTicket($params);
+
+            return;
+        }
+
+        $this->queueInstalls($server, $osChoices, $password);
+        $this->updateServerInDatabase($server);
+
+        return $server;
+    }
+
+    /**
+     * @param Server $server
+     */
+    private function updateServerInDatabase(Server $server)
+    {
+        $domain = sprintf(
+            "%s <%s>",
+            $server->nickname,
+            $server->srv_id
+        );
+
+        $this->database->table('tblhosting')
+            ->where('id', $this->config->get('serviceid'))
+            ->update([
+                'domain' => $domain,
+                'dedicatedip' => $this->primaryAddr($server) ?: '',
+                'assignedips' => $this->assignedIps($server),
+            ])
+            ;
+    }
+
+
+    /**
+     * @param Server $server
+     *
+     * @return string|null
+     */
+    private function primaryAddr(Server $server)
+    {
+        if (!$entity = array_get($server->entities, 0)) {
+            return null;
+        }
+
+        return $entity->primary;
+    }
+
+    /**
+     * @param Server $server
+     *
+     * @return string
+     */
+    private function assignedIps(Server $server)
+    {
+        $entities = new Collection($server->entities);
+
+        return $entities->reduce(function (&$result, $entity) {
+            $result .= "IP Allocation	$entity->name";
+
+            if ($entity->gateway) {
+                $result .= "
+- Usable IP(s)	$entity->full_ip
+- Gateway IP	$entity->gateway
+- Subnet Mask	$entity->subnet_mask";
+            }
+
+            if ($entity->v6_gateway) {
+                $result .= "
+- IPv6 Address	$entity->v6_address
+- IPv6 Gateway	$entity->v6_gateway";
+            }
+
+            return $result .= "\n\n";
+        }, '');
+    }
+
+    /**
+     * @return array
+     */
+    private function getFilters()
+    {
+        $choices = $this->config->options();
+        $ram = $choices['Memory'];
+        $cpu = $this->config->option(WhmcsConfig::CPU_BILLING_ID);
+        $disks = $this->multiChoice($choices, 'SSD Bay %d');
+        $addons = $this->multiChoice($choices, 'Add On %d');
+        $ipGroup = $choices['Datacenter Location'];
+
+        return [
             'mem_billing' => $ram,
             'cpu_billing' => $cpu,
             'disks_billing' => $disks,
             'addons_billing' => $addons,
             'ip_group_billing' => $ipGroup,
-        ], [
+        ];
+    }
+
+    /**
+     * @param string $osChoice
+     * @param string $password
+     *
+     * @return array
+     */
+    private function getServerSettings($osChoice, $password)
+    {
+        $choices = $this->config->options();
+        $params = $this->whmcs->getParams();
+
+        $portSpeed = $choices['Network Port Speed'];
+        $ips = $choices['IPv4 Addresses'];
+        $nickname = $params['domain'];
+
+        return [
             'ips_billing' => $ips,
             'pxe_profile_billing' => $osChoice,
             'port_speed_billing' => $portSpeed,
@@ -116,15 +227,18 @@ class ServerProvisioner
                 'ipmi' => $this->config->option(WhmcsConfig::IPMI_ACCESS),
                 'switch' => $this->config->option(WhmcsConfig::SWITCH_ACCESS),
             ],
-        ], $client);
+        ];
+    }
 
-        if (!$server) {
-            $this->createTicket($params);
-
-            return;
-        }
-
+    /**
+     * @param Server $server
+     * @param array  $osChoices
+     * @param string $password
+     */
+    private function queueInstalls(Server $server, array $osChoices, $password)
+    {
         $choices = new Collection($osChoices);
+
         $choices->reduce(function ($install, $choice) use ($password, $server) {
             $install = $install ?: $server->installs()->get()->items()->last();
             $install = $server->installs()->model()->save([
@@ -137,13 +251,11 @@ class ServerProvisioner
 
             return $install;
         });
-
-        return $server;
     }
 
     /**
-     * @param  array  $choices
-     * @param  string $format  format string for the keys of the field.
+     * @param array  $choices
+     * @param string $format  format string for the keys of the field.
      *
      * @return array
      */
@@ -162,6 +274,9 @@ class ServerProvisioner
         return $result;
     }
 
+    /**
+     * @param array $params
+     */
     private function createTicket(array $params)
     {
         $message = sprintf(
@@ -192,6 +307,11 @@ class ServerProvisioner
         ]);
     }
 
+    /**
+     * @param array $params
+     *
+     * @return string
+     */
     private function getProductName(array $params)
     {
         return $this->database->table('tblproducts')
