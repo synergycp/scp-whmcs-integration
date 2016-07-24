@@ -23,6 +23,10 @@ class ServerService
      */
     protected $servers;
 
+    /**
+     * @param Whmcs            $whmcs
+     * @param ServerRepository $servers
+     */
     public function __construct(
         Whmcs $whmcs,
         ServerRepository $servers
@@ -31,11 +35,17 @@ class ServerService
         $this->servers = $servers;
     }
 
+    /**
+     * @return int
+     */
     public function currentBillingId()
     {
         return $this->whmcs->getParam('serviceid');
     }
 
+    /**
+     * @return Server|null
+     */
     public function current()
     {
         $billingId = $this->currentBillingId();
@@ -53,7 +63,7 @@ class ServerService
         if (!$server = $this->current()) {
             throw new \RuntimeException(sprintf(
                 'Server with billing ID %s does not exist on SynergyCP.',
-                $this->server->currentBillingId()
+                $this->currentBillingId()
             ));
         }
 
