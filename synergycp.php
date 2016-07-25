@@ -4,6 +4,9 @@ if (!defined('WHMCS')) {
     die('This file cannot be accessed directly.');
 }
 
+ini_set('display_errors', 'Off');
+ini_set('error_reporting', E_ALL & ~E_NOTICE & ~E_WARNING);
+
 require __DIR__.'/bootstrap/autoload.php';
 
 use Scp\Whmcs\App;
@@ -31,7 +34,7 @@ function _synergycp_map_static_class($class)
 {
    foreach ($class::staticFunctions() as $name => $method) {
        $fullName = 'synergycp_'.$name;
-       eval('function '.$fullName.' (array $params)
+       eval('function '.$fullName.' ()
        {
            return '.$class.'::'.$method.'();
        }');
@@ -43,3 +46,4 @@ _synergycp_map_class(Whmcs\WhmcsEvents::class);
 _synergycp_map_class(Whmcs\WhmcsButtons::class);
 _synergycp_map_class(Whmcs\WhmcsTemplates::class);
 _synergycp_map_static_class(Whmcs\Whmcs::class);
+_synergycp_map_static_class(Whmcs\WhmcsButtons::class);

@@ -14,13 +14,32 @@ use Scp\Whmcs\Ticket\TicketManager;
  */
 class WhmcsEvents
 {
+    // The internal WHMCS names of events.
+    // TODO: move to interface
+
     /**
-     * The internal WHMCS names of events.
+     * @var string
      */
     const PROVISION = 'CreateAccount';
+
+    /**
+     * @var string
+     */
     const TERMINATE = 'TerminateAccount';
+
+    /**
+     * @var string
+     */
     const SUSPEND = 'SuspendAccount';
+
+    /**
+     * @var string
+     */
     const UNSUSPEND = 'UnsuspendAccount';
+
+    /**
+     * @var string
+     */
     const USAGE = 'UsageUpdate';
 
     /**
@@ -53,6 +72,14 @@ class WhmcsEvents
      */
     protected $ticket;
 
+    /**
+     * @param LogFactory        $log
+     * @param WhmcsConfig       $config
+     * @param UsageUpdater      $usage
+     * @param ServerService     $server
+     * @param TicketManager     $ticket
+     * @param ServerProvisioner $provision
+     */
     public function __construct(
         LogFactory $log,
         WhmcsConfig $config,
@@ -71,8 +98,6 @@ class WhmcsEvents
 
     /**
      * Triggered on Server Provisioning.
-     *
-     * @param  array $params
      *
      * @return string
      */
@@ -94,8 +119,16 @@ class WhmcsEvents
         return 'success';
     }
 
+    /**
+     * Run the usage update function.
+     *
+     * @return string
+     */
     public function usage()
     {
+        return 'success';
+
+        // TODO
         $billingId = $this->server->currentBillingId();
 
         return $this->usage->runAndLogErrors($billingId)
@@ -103,25 +136,15 @@ class WhmcsEvents
             : 'Error running usage update';
     }
 
-
+    /**
+     * Terminate an account, logging and returning any errors that occur.
+     *
+     * @return string|null
+     */
     public function terminate()
     {
         try {
-            switch ($act = $this->config->option(WhmcsConfig::DELETE_ACTION)) {
-            case WhmcsConfig::DELETE_ACTION_WIPE:
-                $this->server->current()->wipe();
-
-                return 'success';
-            case WhmcsConfig::DELETE_ACTION_TICKET:
-                $this->createCancellationTicket();
-
-                return 'success';
-            }
-
-            throw new \RuntimeException(sprintf(
-                'Unhandled delete action: %s',
-                $act
-            ));
+            $this->doDeleteAction();
         } catch (\Exception $exc) {
             $this->logException($exc, __FUNCTION__);
 
@@ -129,6 +152,31 @@ class WhmcsEvents
         }
     }
 
+    /**
+     * Delete the current server using the action chosen in settings.
+     */
+    protected function doDeleteAction()
+    {
+        switch ($act = $this->config->option(WhmcsConfig::DELETE_ACTION)) {
+        case WhmcsConfig::DELETE_ACTION_WIPE:
+            $this->server->current()->wipe();
+
+            return 'success';
+        case WhmcsConfig::DELETE_ACTION_TICKET:
+            $this->createCancellationTicket();
+
+            return 'success';
+        }
+
+        throw new \RuntimeException(sprintf(
+            'Unhandled delete action: %s',
+            $act
+        ));
+    }
+
+    /**
+     * Run the create cancellation ticket delete action.
+     */
     protected function createCancellationTicket()
     {
         $message = sprintf(
@@ -143,32 +191,44 @@ class WhmcsEvents
         ]);
     }
 
+    /**
+     * Triggered on a Suspension event.
+     *
+     * @return string
+     */
     public function suspend()
     {
         try {
             $this->server->current()->suspend();
+
+            return 'success';
         } catch (\Exception $exc) {
             $this->logException($exc, __FUNCTION__);
 
             return $exc->getMessage();
         }
-
-        return 'success';
     }
 
+    /**
+     * Triggered on an Unsuspension event.
+     */
     public function unsuspend()
     {
         try {
             $this->server->current()->unsuspend();
+
+            return 'success';
         } catch (\Exception $exc) {
             $this->logException($exc, __FUNCTION__);
 
             return $exc->getMessage();
         }
-
-        return 'success';
     }
 
+    /**
+     * @param \Exception $exc
+     * @param string     $action
+     */
     private function logException(\Exception $exc, $action)
     {
         $this->log->activity(
@@ -178,6 +238,9 @@ class WhmcsEvents
         );
     }
 
+    /**
+     * @return array
+     */
     public static function functions()
     {
         return [
