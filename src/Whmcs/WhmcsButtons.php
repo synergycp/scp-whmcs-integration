@@ -2,36 +2,95 @@
 
 namespace Scp\Whmcs\Whmcs;
 
+use Scp\Api\ApiResponse;
 use Scp\Server\Server;
-use Scp\Server\ServerRepository;
-use Scp\Whmcs\Whmcs\Whmcs;
+use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Whmcs\Api;
 use Scp\Whmcs\Server\ServerService;
 use Scp\Api\ApiKey;
 use Scp\Api\ApiSingleSignOn;
 
+/**
+ * Handle the buttons that appear on WHMCS.
+ */
 class WhmcsButtons
 {
     /**
-     * Internal Identifiers
+     * Internal Identifiers.
+     */
+    /**
+     * @var string
      */
     const CLIENT_ACTIONS = 'ClientAreaCustomButtonArray';
+    /**
+     * @var string
+     */
+    const ADMIN_ACTIONS = 'AdminCustomButtonArray';
+    /**
+     * @var string
+     */
     const CLIENT_FUNCTIONS = 'ClientAreaAllowedFunctions';
-    const MANAGE = 'btn_manage';
+    /**
+     * @var string
+     */
     const ADMIN_LOGIN_LINK = 'LoginLink';
+
+    /**
+     * @var string
+     */
+    const MANAGE = 'btn_manage';
+    /**
+     * @var string
+     */
     const PORT_POWER_ON = 'btn_port_power_on';
+    /**
+     * @var string
+     */
     const PORT_POWER_OFF = 'btn_port_power_off';
 
+    /**
+     * @var string
+     */
     const RESET_BMC = 'btn_reset_bmc';
+    /**
+     * @var string
+     */
     const PXE_BOOT = 'btn_pxe_boot';
+    /**
+     * @var string
+     */
     const POWER_ON = 'btn_power_on';
+    /**
+     * @var string
+     */
     const POWER_OFF = 'btn_power_off';
+    /**
+     * @var string
+     */
     const POWER_RESET = 'btn_power_reset';
+    /**
+     * @var string
+     */
     const POWER_SHUTDOWN = 'btn_power_shutdown';
 
+    /**
+     * @var string
+     */
     const IPMI_CLIENT_CREATE = 'btn_ipmi_client_create';
+    /**
+     * @var string
+     */
     const IPMI_CLIENT_DELETE = 'btn_ipmi_client_delete';
+
+    /**
+     * @var string
+     */
+    const CREATE_CLIENT = 'btn_create_client';
+    /**
+     * @var string
+     */
+    const CHECK_INVENTORY = 'btn_check_inventory';
 
     /**
      * @var Api
@@ -48,16 +107,32 @@ class WhmcsButtons
      */
     protected $server;
 
+    /**
+     * @var ServerProvisioner
+     */
+    protected $provision;
+
+    /**
+     * @param Api               $api
+     * @param ClientService     $clients
+     * @param ServerService     $server
+     * @param ServerProvisioner $provision
+     */
     public function __construct(
         Api $api,
         ClientService $clients,
-        ServerService $server
+        ServerService $server,
+        ServerProvisioner $provision
     ) {
         $this->api = $api;
         $this->server = $server;
         $this->clients = $clients;
+        $this->provision = $provision;
     }
 
+    /**
+     * @return array
+     */
     public function client()
     {
         if (!$server = $this->server->current()) {
@@ -72,6 +147,17 @@ class WhmcsButtons
     }
 
     /**
+     * @return array
+     */
+    public static function admin()
+    {
+        return [
+            'Create Client' => static::CREATE_CLIENT,
+            'Check Inventory' => static::CHECK_INVENTORY,
+        ];
+    }
+
+    /**
      * Client actions that are not visible as buttons.
      *
      * @return array
@@ -83,7 +169,7 @@ class WhmcsButtons
             static::IPMI_CLIENT_CREATE,
 
             // Debug WHMCS Events:
-            // /*
+            /*
             WhmcsEvents::USAGE,
             WhmcsEvents::TERMINATE,
             WhmcsEvents::SUSPEND,
@@ -92,6 +178,9 @@ class WhmcsButtons
         ];
     }
 
+    /**
+     * @return array
+     */
     protected function otherActions()
     {
         return [
@@ -99,9 +188,14 @@ class WhmcsButtons
         ];
     }
 
+    /**
+     * @param Server $server
+     *
+     * @return array
+     */
     protected function switchActions(Server $server)
     {
-        if (!$server->switch_access_now) {
+        if (!$this->inAdmin && !$server->access()->now->switch) {
             return [];
         }
 
@@ -111,9 +205,14 @@ class WhmcsButtons
         ];
     }
 
+    /**
+     * @param Server $server
+     *
+     * @return array
+     */
     protected function ipmiActions(Server $server)
     {
-        if (!$server->ipmi_access_now) {
+        if (!$this->inAdmin && !$server->access()->now->ipmi) {
             return [];
         }
 
@@ -127,9 +226,14 @@ class WhmcsButtons
         ];
     }
 
+    /**
+     * @param Server $server
+     *
+     * @return array
+     */
     protected function pxeActions(Server $server)
     {
-        if (!$server->pxe_access_now) {
+        if (!$this->inAdmin && !$server->access()->now->pxe) {
             return [];
         }
 
@@ -137,6 +241,9 @@ class WhmcsButtons
         ];
     }
 
+    /**
+     * @return array
+     */
     public static function functions()
     {
         return [
@@ -154,25 +261,56 @@ class WhmcsButtons
             static::POWER_SHUTDOWN => 'powerShutdown',
             static::IPMI_CLIENT_CREATE => 'ipmiClientCreate',
             static::IPMI_CLIENT_DELETE => 'ipmiClientDelete',
+
+            // Admin only.
+            static::CREATE_CLIENT => 'createClient',
+            static::CHECK_INVENTORY => 'checkInventory',
         ];
     }
 
+    /**
+     * @return string
+     */
+    public function createClient()
+    {
+        $this->clients->getOrCreate();
+
+        return 'success';
+    }
+
+    /**
+     * @return string
+     */
+    public function checkInventory()
+    {
+        return $this->provision->check()
+            ? 'success'
+            : 'Server not found in inventory.'
+            ;
+    }
+
+    /**
+     * @return string
+     */
     public function ipmiClientCreate()
     {
         $this->ipmiControl([
             'add_user' => true,
         ]);
 
-        return "success";
+        return 'success';
     }
 
+    /**
+     * @return string
+     */
     public function ipmiClientDelete()
     {
         $this->ipmiControl([
             'delete_user' => true,
         ]);
 
-        return "success";
+        return 'success';
     }
 
     /**
@@ -184,7 +322,7 @@ class WhmcsButtons
             'reset_bmc' => true,
         ]);
 
-        return "success";
+        return 'success';
     }
 
     /**
@@ -196,7 +334,7 @@ class WhmcsButtons
             'pxe_boot' => true,
         ]);
 
-        return "success";
+        return 'success';
     }
 
     /**
@@ -208,7 +346,7 @@ class WhmcsButtons
             'power' => 'on',
         ]);
 
-        return "success";
+        return 'success';
     }
 
     /**
@@ -220,7 +358,7 @@ class WhmcsButtons
             'power' => 'off',
         ]);
 
-        return "success";
+        return 'success';
     }
 
     /**
@@ -232,7 +370,7 @@ class WhmcsButtons
             'power' => 'reset',
         ]);
 
-        return "success";
+        return 'success';
     }
 
     /**
@@ -244,12 +382,12 @@ class WhmcsButtons
             'power' => 'soft',
         ]);
 
-        return "success";
+        return 'success';
     }
 
     /**
-    * Displayed on the view product page of WHMCS Admin.
-    */
+     * Displayed on the view product page of WHMCS Admin.
+     */
     public function loginLink()
     {
         if (isset($_GET['login_client'])) {
@@ -275,26 +413,36 @@ class WhmcsButtons
         </div>
 
         <?php
+
     }
 
+    /**
+     * @return string
+     */
     public function portPowerOn()
     {
         $this->switchControl([
             'power' => 'on',
         ]);
 
-        return "success";
+        return 'success';
     }
 
+    /**
+     * @return string
+     */
     public function portPowerOff()
     {
         $this->switchControl([
             'power' => 'off',
         ]);
 
-        return "success";
+        return 'success';
     }
 
+    /**
+     * Manage Single Sign On.
+     */
     public function manage()
     {
         $client = $this->clients->getOrCreate();
@@ -313,6 +461,9 @@ class WhmcsButtons
         $this->transferTo($url);
     }
 
+    /**
+     * Manage as admin Single Sign On.
+     */
     public function manageAsAdmin()
     {
         try {
@@ -330,6 +481,10 @@ class WhmcsButtons
         $this->transferTo($url);
     }
 
+    /**
+     * @param string $url
+     * @param string $linkText
+     */
     protected function transferTo($url, $linkText = 'SynergyCP')
     {
         $this->exitWithMessage(sprintf(
@@ -337,10 +492,13 @@ class WhmcsButtons
             'Transfer to <a href="%s">%s</a>.',
             $url,
             $url,
-            'SynergyCP'
+            $linkText
         ));
     }
 
+    /**
+     * @param string $message
+     */
     protected function exitWithMessage($message)
     {
         // Clear output buffer so no other page contents show.
@@ -349,6 +507,11 @@ class WhmcsButtons
         die($message);
     }
 
+    /**
+     * @param array $data
+     *
+     * @return ApiResponse
+     */
     protected function switchControl(array $data)
     {
         $server = $this->getServer();
@@ -361,6 +524,11 @@ class WhmcsButtons
         return $this->api->asClient()->patch($url, $data);
     }
 
+    /**
+     * @param array $data
+     *
+     * @return ApiResponse
+     */
     protected function ipmiControl(array $data)
     {
         $server = $this->getServer();
@@ -380,5 +548,15 @@ class WhmcsButtons
     protected function getServer()
     {
         return $this->server->currentOrFail();
+    }
+
+    /**
+     * @return array
+     */
+    public static function staticFunctions()
+    {
+        return [
+            static::ADMIN_ACTIONS => 'admin',
+        ];
     }
 }
