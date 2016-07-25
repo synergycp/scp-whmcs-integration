@@ -112,6 +112,14 @@ class ServerProvisioner
     }
 
     /**
+     * @return Server|null
+     */
+    public function check()
+    {
+        return $this->provision->check($this->getFilters());
+    }
+
+    /**
      * @param Server $server
      */
     private function updateServerInDatabase(Server $server)
@@ -179,7 +187,7 @@ class ServerProvisioner
     /**
      * @return array
      */
-    private function getFilters()
+    public function getFilters()
     {
         $choices = $this->config->options();
         $ram = $choices['Memory'];
