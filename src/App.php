@@ -25,6 +25,9 @@ class App
      */
     protected $singleton = [];
 
+    /**
+     * @var array
+     */
     protected $instance = [];
 
     /**
@@ -32,16 +35,43 @@ class App
      */
     protected $buildStack = [];
 
+    /**
+     * @var array
+     */
+    protected $params = [];
+
+    /**
+     * @var array
+     */
+    protected $bindings = [];
+
+    /**
+     * @param array $params
+     */
     public function __construct(array $params = [])
     {
+        $this->params = $params;
         $this->singleton(Api::class);
         $this->singleton(Client\ClientService::class);
-        $this->singleton(Whmcs::class, function () use ($params) {
-            return new Whmcs($params);
+        $this->bind(Whmcs::class, function () {
+            return new Whmcs($this->params);
         });
 
         // Ensure that the API instance is initialized.
         $this->make(Api::class);
+    }
+
+    /**
+     * @param mixed $class
+     * @param mixed $closure
+     *
+     * @return $this
+     */
+    public function bind($class, $closure)
+    {
+        $this->bindings[$class] = $closure;
+
+        return $this;
     }
 
     /**
@@ -74,11 +104,23 @@ class App
         return $this;
     }
 
+    /**
+     * @param string $class
+     * @param array $parameters
+     *
+     * @return \stdClass
+     */
     public function make($class, array $parameters = [])
     {
         return $this->resolve($class, $parameters);
     }
 
+    /**
+     * @param string $class
+     * @param array $parameters
+     *
+     * @return \stdClass
+     */
     public function resolve($class, array $parameters = [])
     {
         if ($instance = Arr::get($this->instance, $class)) {
@@ -118,6 +160,10 @@ class App
         // used as resolvers for more fine-tuned resolution of these objects.
         if ($concrete instanceof \Closure) {
             return $concrete($this, $parameters);
+        }
+
+        if ($binding = Arr::get($this->bindings, $concrete)) {
+            return call_user_func_array($binding, $parameters);
         }
 
         $reflector = new \ReflectionClass($concrete);
@@ -163,6 +209,26 @@ class App
         array_pop($this->buildStack);
 
         return $reflector->newInstanceArgs($instances);
+    }
+
+    /**
+     * @return array
+     */
+    public function getParams()
+    {
+        return $this->params;
+    }
+
+    /**
+     * @param array $params
+     *
+     * @return $this
+     */
+    public function setParams(array $params)
+    {
+        $this->params = $params;
+
+        return $this;
     }
 
     /**
@@ -314,9 +380,15 @@ class App
         }
     }
 
+    /**
+     * @param array $params
+     *
+     * @return static
+     */
     public static function get(array $params = [])
     {
         return static::$selfInstance = static::$selfInstance
-            ?: new static($params);
+            ? static::$selfInstance->setParams($params)
+            : new static($params);
     }
 }

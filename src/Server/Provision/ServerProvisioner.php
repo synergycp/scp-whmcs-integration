@@ -3,6 +3,7 @@
 namespace Scp\Whmcs\Server\Provision;
 
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
+use Scp\Whmcs\LogFactory;
 use Scp\Whmcs\Database\Database;
 use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Whmcs\Whmcs;
@@ -52,8 +53,14 @@ class ServerProvisioner
     protected $database;
 
     /**
+     * @var LogFactory
+     */
+    protected $log;
+
+    /**
      * @param Whmcs                     $whmcs
      * @param Database                  $database
+     * @param LogFactory                $log
      * @param WhmcsConfig               $config
      * @param ClientService             $client
      * @param TicketManager             $tickets
@@ -62,11 +69,13 @@ class ServerProvisioner
     public function __construct(
         Whmcs $whmcs,
         Database $database,
+        LogFactory $log,
         WhmcsConfig $config,
         ClientService $client,
         TicketManager $tickets,
         OriginalServerProvisioner $provision
     ) {
+        $this->log = $log;
         $this->whmcs = $whmcs;
         $this->config = $config;
         $this->client = $client;
@@ -125,19 +134,25 @@ class ServerProvisioner
     private function updateServerInDatabase(Server $server)
     {
         $domain = sprintf(
-            "%s <%s>",
+            "%s &lt;%s&gt;",
             $server->nickname,
             $server->srv_id
         );
-
-        $this->database->table('tblhosting')
-            ->where('id', $this->config->get('serviceid'))
+        $serviceId = $this->config->get('serviceid');
+        $updated = $this->database
+            ->table('tblhosting')
+            ->where('id', $serviceId)
             ->update([
                 'domain' => $domain,
                 'dedicatedip' => $this->primaryAddr($server) ?: '',
                 'assignedips' => $this->assignedIps($server),
-            ])
-            ;
+            ]);
+
+        $this->log->activity(
+            '%s service ID: %s',
+            $updated ? 'Successfully updated' : 'Failed to update',
+            $serviceId
+        );
     }
 
 
@@ -219,6 +234,7 @@ class ServerProvisioner
         $portSpeed = $choices['Network Port Speed'];
         $ips = $choices['IPv4 Addresses'];
         $nickname = $params['domain'];
+        $rateLimit = array_get($choices, 'DDoS Protection');
 
         return [
             'ips_billing' => $ips,
@@ -226,6 +242,9 @@ class ServerProvisioner
             'port_speed_billing' => $portSpeed,
             'nickname' => $nickname,
             'password' => $password,
+            'ddos' => array_filter([
+                'rate-limit' => $rateLimit ?: null,
+            ]),
             'billing' => [
                 'id' => $this->config->get('serviceid'),
                 'max_bandwidth' => $choices['Bandwidth'],
@@ -322,7 +341,8 @@ class ServerProvisioner
      */
     private function getProductName(array $params)
     {
-        return $this->database->table('tblproducts')
+        return $this->database
+            ->table('tblproducts')
             ->select('name')
             ->where('id', $params['pid'])
             ->limit(1)
