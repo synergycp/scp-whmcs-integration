@@ -43,6 +43,11 @@ class WhmcsEvents
     const USAGE = 'UsageUpdate';
 
     /**
+     * @var string
+     */
+    const SUCCESS = 'success';
+
+    /**
      * @var LogFactory`
      */
     protected $log;
@@ -116,7 +121,7 @@ class WhmcsEvents
             return $exc->getMessage();
         }
 
-        return 'success';
+        return static::SUCCESS;
     }
 
     /**
@@ -126,25 +131,25 @@ class WhmcsEvents
      */
     public function usage()
     {
-        return 'success';
+        // TODO usage for entire server, not billing ID
+        return static::SUCCESS;
 
-        // TODO
         $billingId = $this->server->currentBillingId();
 
         return $this->usage->runAndLogErrors($billingId)
-            ? 'success'
+            ? static::SUCCESS
             : 'Error running usage update';
     }
 
     /**
      * Terminate an account, logging and returning any errors that occur.
      *
-     * @return string|null
+     * @return string
      */
     public function terminate()
     {
         try {
-            $this->doDeleteAction();
+            return $this->doDeleteAction();
         } catch (\Exception $exc) {
             $this->logException($exc, __FUNCTION__);
 
@@ -154,24 +159,30 @@ class WhmcsEvents
 
     /**
      * Delete the current server using the action chosen in settings.
+     *
+     * @return string
+     *
+     * @throws \RuntimeException
      */
     protected function doDeleteAction()
     {
         switch ($act = $this->config->option(WhmcsConfig::DELETE_ACTION)) {
         case WhmcsConfig::DELETE_ACTION_WIPE:
-            $this->server->current()->wipe();
-
-            return 'success';
+            $this->server->currentOrFail()->wipe();
+            break;
         case WhmcsConfig::DELETE_ACTION_TICKET:
             $this->createCancellationTicket();
+            break;
+        default:
+            $msg = sprintf(
+                'Unhandled delete action: %s',
+                $act
+            );
 
-            return 'success';
+            throw new \RuntimeException($msg);
         }
 
-        throw new \RuntimeException(sprintf(
-            'Unhandled delete action: %s',
-            $act
-        ));
+        return static::SUCCESS;
     }
 
     /**
@@ -186,7 +197,7 @@ class WhmcsEvents
 
         $this->ticket->create([
             'clientid' => $this->config->get('userid'),
-            'subject' => 'Server Cancellation',
+            'subject' => 'Server Termination',
             'message' => $message,
         ]);
     }
@@ -201,7 +212,7 @@ class WhmcsEvents
         try {
             $this->server->current()->suspend();
 
-            return 'success';
+            return static::SUCCESS;
         } catch (\Exception $exc) {
             $this->logException($exc, __FUNCTION__);
 
@@ -211,13 +222,15 @@ class WhmcsEvents
 
     /**
      * Triggered on an Unsuspension event.
+     *
+     * @return string
      */
     public function unsuspend()
     {
         try {
             $this->server->current()->unsuspend();
 
-            return 'success';
+            return static::SUCCESS;
         } catch (\Exception $exc) {
             $this->logException($exc, __FUNCTION__);
 
