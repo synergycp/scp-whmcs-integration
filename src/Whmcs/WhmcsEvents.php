@@ -1,12 +1,13 @@
 <?php
 
 namespace Scp\Whmcs\Whmcs;
+
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Server\Usage\UsageUpdater;
 use Scp\Whmcs\Server\ServerService;
 use Scp\Whmcs\LogFactory;
-use Scp\Whmcs\Whmcs\WhmcsConfig;
 use Scp\Whmcs\Ticket\TicketManager;
+use Scp\Whmcs\Database\Database;
 
 /**
  * Class Responsibilities:
@@ -78,6 +79,12 @@ class WhmcsEvents
     protected $ticket;
 
     /**
+     * @var Database
+     */
+    protected $database;
+
+    /**
+     * @param Database          $database
      * @param LogFactory        $log
      * @param WhmcsConfig       $config
      * @param UsageUpdater      $usage
@@ -86,6 +93,7 @@ class WhmcsEvents
      * @param ServerProvisioner $provision
      */
     public function __construct(
+        Database $database,
         LogFactory $log,
         WhmcsConfig $config,
         UsageUpdater $usage,
@@ -98,6 +106,7 @@ class WhmcsEvents
         $this->config = $config;
         $this->server = $server;
         $this->ticket = $ticket;
+        $this->database = $database;
         $this->provision = $provision;
     }
 
@@ -168,7 +177,11 @@ class WhmcsEvents
     {
         switch ($act = $this->config->option(WhmcsConfig::DELETE_ACTION)) {
         case WhmcsConfig::DELETE_ACTION_WIPE:
-            $this->server->currentOrFail()->wipe();
+            $this->server
+                ->currentOrFail()
+                ->wipe()
+                ;
+            $this->wipeProductDetails();
             break;
         case WhmcsConfig::DELETE_ACTION_TICKET:
             $this->createCancellationTicket();
@@ -183,6 +196,28 @@ class WhmcsEvents
         }
 
         return static::SUCCESS;
+    }
+
+    /**
+     * Remove the current service's product details from the database.
+     */
+    protected function wipeProductDetails()
+    {
+        $serviceId = $this->config->get('serviceid');
+        $updated = $this->database
+            ->table('tblhosting')
+            ->where('id', $serviceId)
+            ->update([
+                'domain' => '',
+                'dedicatedip' => '',
+                'assignedips' => '',
+            ]);
+
+        $this->log->activity(
+            '%s service ID: %s during termination',
+            $updated ? 'Successfully updated' : 'Failed to update',
+            $serviceId
+        );
     }
 
     /**
@@ -210,7 +245,10 @@ class WhmcsEvents
     public function suspend()
     {
         try {
-            $this->server->current()->suspend();
+            $this->server
+                ->currentOrFail()
+                ->suspend()
+                ;
 
             return static::SUCCESS;
         } catch (\Exception $exc) {
@@ -228,7 +266,10 @@ class WhmcsEvents
     public function unsuspend()
     {
         try {
-            $this->server->current()->unsuspend();
+            $this->server
+                ->currentOrFail()
+                ->unsuspend()
+                ;
 
             return static::SUCCESS;
         } catch (\Exception $exc) {
