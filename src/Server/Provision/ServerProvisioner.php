@@ -149,7 +149,7 @@ class ServerProvisioner
             ]);
 
         $this->log->activity(
-            '%s service ID: %s',
+            '%s service ID: %s during create',
             $updated ? 'Successfully updated' : 'Failed to update',
             $serviceId
         );
