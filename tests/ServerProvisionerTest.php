@@ -13,6 +13,7 @@ use Scp\Server\Server;
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
 use Scp\Client\Client;
 use Scp\Whmcs\Whmcs\WhmcsConfig;
+use Scp\Whmcs\LogFactory;
 use Illuminate\Database\Query\Builder;
 
 class ServerProvisionerTest extends TestCase
@@ -26,6 +27,7 @@ class ServerProvisionerTest extends TestCase
         $this->provision = new ServerProvisioner(
             $this->whmcs = Mockery::mock(Whmcs::class),
             $this->database = Mockery::mock(Database::class),
+            $this->log = Mockery::mock(LogFactory::class),
             $this->config = Mockery::mock(WhmcsConfig::class),
             $this->clients = Mockery::mock(ClientService::class),
             $this->tickets = Mockery::mock(TicketManager::class),
@@ -43,31 +45,89 @@ class ServerProvisionerTest extends TestCase
     {
         $this->setupConfig($config, $params);
 
-        $this->orig->shouldReceive('server')
+        $this->orig
+            ->shouldReceive('server')
             ->with($serverFilter, $serverInfo, $this->client)
             ->andReturn($this->server);
-        $this->clients->shouldReceive('getOrCreate')
+        $this->clients
+            ->shouldReceive('getOrCreate')
             ->andReturn($this->client);
+        $this->client
+            ->shouldReceive('getId')
+            ->andReturn(1);
+
+        $this->server
+            ->shouldReceive('getAttribute')
+            ->with('srv_id')
+            ->andReturn($serverId = 'server-id')
+            ;
+        $this->server
+            ->shouldReceive('getAttribute')
+            ->with('nickname')
+            ->andReturn($nickname = 'nickname')
+            ;
+
+        $table = Mockery::mock(\stdClass::class);
+
+        $this->database
+            ->shouldReceive('table')
+            ->with('tblhosting')
+            ->andReturn($table)
+            ;
+        $table
+            ->shouldReceive('where')
+            ->with('id', $params['serviceid'])
+            ->andReturn($table)
+            ;
+        $table
+            ->shouldReceive('update')
+            ->with([
+                'domain' => "$nickname &lt;$serverId&gt;",
+                'dedicatedip' => '',
+                'assignedips' => '',
+            ])
+            ->andReturn(true)
+            ;
+        $entities = [];
+
+        $this->log
+            ->shouldReceive('activity')
+            ;
+
+        $this->server
+            ->shouldReceive('getAttribute')
+            ->with('entities')
+            ->andReturn($entities)
+            ;
 
         $installQuery = Mockery::mock(ApiQuery::class);
         $installs = Mockery::mock(ApiPaginator::class);
         $collect = Mockery::mock(Collection::class);
-        $installQuery->shouldReceive('get')->once()->andReturn($installs);
+        $installQuery
+            ->shouldReceive('get')
+            ->once()
+            ->andReturn($installs);
         foreach ($extraInstalls as $postData) {
-            $this->server->shouldReceive('installs')
+            $this->server
+                ->shouldReceive('installs')
                 ->andReturn($installQuery);
             $install = Mockery::mock(Install::class);
-            $installs->shouldReceive('items')
+            $installs
+                ->shouldReceive('items')
                 ->once()
                 ->andReturn($collect);
-            $collect->shouldReceive('last')
+            $collect
+                ->shouldReceive('last')
                 ->once()
                 ->andReturn($install);
-            $installQuery->shouldReceive('model')
+            $installQuery
+                ->shouldReceive('model')
                 ->andReturn($install);
-            $install->shouldReceive('save')
+            $install
+                ->shouldReceive('save')
                 ->with($postData);
-            $install->shouldReceive('getAttribute')
+            $install
+                ->shouldReceive('getAttribute')
                 ->with('id')
                 ->andReturn($postData['parent']['id']);
         }
@@ -116,6 +176,7 @@ class ServerProvisionerTest extends TestCase
                     'port_speed_billing' => $portSpeed,
                     'nickname' => $nickname,
                     'password' => $password,
+                    'ddos' => [],
                     'billing' => [
                         'id' => $billingId,
                         'max_bandwidth' => $maxBandwidth,
