@@ -51,6 +51,12 @@ class App
     public function __construct(array $params = [])
     {
         $this->params = $params;
+
+        if (empty($this->params)) {
+            error_log('Empty parameters!');
+            die('Something is misconfigured in synergycp module.');
+        }
+
         $this->singleton(Api::class);
         $this->singleton(Client\ClientService::class);
         $this->bind(Whmcs::class, function () {

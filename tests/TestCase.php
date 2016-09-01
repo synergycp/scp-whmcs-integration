@@ -9,7 +9,7 @@ class TestCase extends PHPUnit_Framework_TestCase
      */
     protected function newApp()
     {
-        return new App();
+        return new App(['']);
     }
 
     /**
@@ -17,6 +17,6 @@ class TestCase extends PHPUnit_Framework_TestCase
      */
     protected function app()
     {
-        return App::get();
+        return App::get(['']);
     }
 }
