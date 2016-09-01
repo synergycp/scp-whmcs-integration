@@ -22,9 +22,9 @@ class Api extends OriginalApi
         $hostname = Arr::get($params, 'serverhostname');
 
         $parsed = parse_url($hostname);
-        $path = trim(Arr::get($parsed, 'path', ''), '/');
+        $path = Arr::get($parsed, 'path', '');
         if ($path) {
-            $path .= '/';
+            $path = trim($path, '/') . '/';
         }
 
         $host = Arr::get($parsed, 'host', '');
