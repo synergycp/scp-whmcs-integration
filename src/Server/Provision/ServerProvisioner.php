@@ -9,6 +9,7 @@ use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Whmcs\WhmcsConfig;
 use Scp\Whmcs\Client\ClientService;
+use Scp\Whmcs\Server\ServerFieldsService;
 use Scp\Support\Collection;
 use Scp\Server\Server;
 
@@ -58,12 +59,18 @@ class ServerProvisioner
     protected $log;
 
     /**
+     * @var ServerFieldsService
+     */
+    protected $fields;
+
+    /**
      * @param Whmcs                     $whmcs
      * @param Database                  $database
      * @param LogFactory                $log
      * @param WhmcsConfig               $config
      * @param ClientService             $client
      * @param TicketManager             $tickets
+     * @param ServerFieldsService       $fields
      * @param OriginalServerProvisioner $provision
      */
     public function __construct(
@@ -73,12 +80,14 @@ class ServerProvisioner
         WhmcsConfig $config,
         ClientService $client,
         TicketManager $tickets,
+        ServerFieldsService $fields,
         OriginalServerProvisioner $provision
     ) {
         $this->log = $log;
         $this->whmcs = $whmcs;
         $this->config = $config;
         $this->client = $client;
+        $this->fields = $fields;
         $this->tickets = $tickets;
         $this->database = $database;
         $this->provision = $provision;
@@ -133,70 +142,14 @@ class ServerProvisioner
      */
     private function updateServerInDatabase(Server $server)
     {
-        $domain = sprintf(
-            "%s &lt;%s&gt;",
-            $server->nickname,
-            $server->srv_id
-        );
         $serviceId = $this->config->get('serviceid');
-        $updated = $this->database
-            ->table('tblhosting')
-            ->where('id', $serviceId)
-            ->update([
-                'domain' => $domain,
-                'dedicatedip' => $this->primaryAddr($server) ?: '',
-                'assignedips' => $this->assignedIps($server),
-            ]);
+        $updated = $this->fields->fill($serviceId, $server);
 
         $this->log->activity(
             '%s service ID: %s during create',
             $updated ? 'Successfully updated' : 'Failed to update',
             $serviceId
         );
-    }
-
-
-    /**
-     * @param Server $server
-     *
-     * @return string|null
-     */
-    private function primaryAddr(Server $server)
-    {
-        if (!$entity = array_get($server->entities, 0)) {
-            return null;
-        }
-
-        return $entity->primary;
-    }
-
-    /**
-     * @param Server $server
-     *
-     * @return string
-     */
-    private function assignedIps(Server $server)
-    {
-        $entities = new Collection($server->entities);
-
-        return $entities->reduce(function (&$result, $entity) {
-            $result .= "IP Allocation	$entity->name";
-
-            if ($entity->gateway) {
-                $result .= "
-- Usable IP(s)	$entity->full_ip
-- Gateway IP	$entity->gateway
-- Subnet Mask	$entity->subnet_mask";
-            }
-
-            if ($entity->v6_gateway) {
-                $result .= "
-- IPv6 Address	$entity->v6_address
-- IPv6 Gateway	$entity->v6_gateway";
-            }
-
-            return $result .= "\n\n";
-        }, '');
     }
 
     /**
