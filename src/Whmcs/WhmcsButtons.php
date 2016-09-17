@@ -5,9 +5,11 @@ namespace Scp\Whmcs\Whmcs;
 use Scp\Api\ApiResponse;
 use Scp\Server\Server;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
+use Scp\Whmcs\Server\ServerFieldsService;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Whmcs\Api;
 use Scp\Whmcs\Server\ServerService;
+use Scp\Whmcs\Whmcs\WhmcsConfig;
 use Scp\Api\ApiKey;
 use Scp\Api\ApiSingleSignOn;
 
@@ -91,6 +93,10 @@ class WhmcsButtons
      * @var string
      */
     const CHECK_INVENTORY = 'btn_check_inventory';
+    /**
+     * @var string
+     */
+    const FILL_DATA = 'btn_fill_data';
 
     /**
      * @var Api
@@ -98,9 +104,9 @@ class WhmcsButtons
     protected $api;
 
     /**
-     * @var ClientService
+     * @var WhmcsConfig
      */
-    protected $clients;
+    protected $config;
 
     /**
      * @var ServerService
@@ -108,23 +114,39 @@ class WhmcsButtons
     protected $server;
 
     /**
+     * @var ClientService
+     */
+    protected $clients;
+
+    /**
      * @var ServerProvisioner
      */
     protected $provision;
 
     /**
-     * @param Api               $api
-     * @param ClientService     $clients
-     * @param ServerService     $server
-     * @param ServerProvisioner $provision
+     * @var ServerFieldsService
+     */
+    protected $fields;
+
+    /**
+     * @param Api                 $api
+     * @param WhmcsConfig         $config
+     * @param ClientService       $clients
+     * @param ServerService       $server
+     * @param ServerProvisioner   $provision
+     * @param ServerFieldsService $fields
      */
     public function __construct(
         Api $api,
-        ClientService $clients,
+        WhmcsConfig $config,
         ServerService $server,
-        ServerProvisioner $provision
+        ClientService $clients,
+        ServerProvisioner $provision,
+        ServerFieldsService $fields
     ) {
         $this->api = $api;
+        $this->config = $config;
+        $this->fields = $fields;
         $this->server = $server;
         $this->clients = $clients;
         $this->provision = $provision;
@@ -154,6 +176,7 @@ class WhmcsButtons
         return [
             'Create Client' => static::CREATE_CLIENT,
             'Check Inventory' => static::CHECK_INVENTORY,
+            'Fill Fields' => static::FILL_DATA,
         ];
     }
 
@@ -265,7 +288,23 @@ class WhmcsButtons
             // Admin only.
             static::CREATE_CLIENT => 'createClient',
             static::CHECK_INVENTORY => 'checkInventory',
+            static::FILL_DATA => 'fillData',
         ];
+    }
+
+    /**
+     * @return string
+     */
+    public function fillData()
+    {
+        try {
+            return $this->fields->fill(
+                $this->config->get('serviceid'),
+                $this->server->currentOrFail()
+            ) ? 'success' : 'Unknown error';
+        } catch (\Exception $exc) {
+            return $exc->getMessage();
+        }
     }
 
     /**
