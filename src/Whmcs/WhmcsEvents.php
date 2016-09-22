@@ -238,6 +238,23 @@ class WhmcsEvents
     }
 
     /**
+     * Run the create cancellation ticket delete action.
+     */
+    protected function createSuspensionTicket()
+    {
+        $message = sprintf(
+            'Server with billing ID %d has been suspended.',
+            $this->server->currentBillingId()
+        );
+
+        $this->ticket->create([
+            'clientid' => $this->config->get('userid'),
+            'subject' => 'Server Suspension',
+            'message' => $message,
+        ]);
+    }
+
+    /**
      * Triggered on a Suspension event.
      *
      * @return string
@@ -245,10 +262,11 @@ class WhmcsEvents
     public function suspend()
     {
         try {
-            $this->server
-                ->currentOrFail()
-                ->suspend()
-                ;
+            $this->createSuspensionTicket(
+                $this->server
+                    ->currentOrFail()
+                    ->suspend()
+            );
 
             return static::SUCCESS;
         } catch (\Exception $exc) {
