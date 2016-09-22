@@ -10,6 +10,7 @@ use Scp\Whmcs\Client\ClientService;
 use Scp\Whmcs\Api;
 use Scp\Whmcs\Server\ServerService;
 use Scp\Whmcs\Whmcs\WhmcsConfig;
+use Scp\Entity\Entity;
 use Scp\Api\ApiKey;
 use Scp\Api\ApiSingleSignOn;
 
@@ -322,10 +323,13 @@ class WhmcsButtons
      */
     public function checkInventory()
     {
-        return $this->provision->check()
-            ? 'success'
-            : 'Server not found in inventory.'
-            ;
+        try {
+            $this->provision->check();
+
+            return 'success';
+        } catch (\Exception $exc) {
+            return $exc->getMessage();
+        }
     }
 
     /**
