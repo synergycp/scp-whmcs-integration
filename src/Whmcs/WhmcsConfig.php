@@ -94,6 +94,14 @@ class WhmcsConfig
         return $this->get('configoptions');
     }
 
+    /**
+     * @return mixed
+     */
+    public function getOption($option)
+    {
+        return $this->options()[$option];
+    }
+
     public function form()
     {
         $config = [];
