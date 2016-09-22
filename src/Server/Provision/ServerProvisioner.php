@@ -12,6 +12,7 @@ use Scp\Whmcs\Client\ClientService;
 use Scp\Whmcs\Server\ServerFieldsService;
 use Scp\Support\Collection;
 use Scp\Server\Server;
+use Scp\Entity\Entity;
 
 /**
  * Provision a Server for WHMCS.
@@ -130,11 +131,41 @@ class ServerProvisioner
     }
 
     /**
-     * @return Server|null
+     * @throws \Exception
      */
     public function check()
     {
-        return $this->provision->check($this->getFilters());
+        if (!$this->getServer()) {
+            throw new \Exception('No matching Server found in inventory');
+        }
+
+        if (!$this->getEntities()) {
+            throw new \Exception('No mathcing Entity found in inventory');
+        }
+    }
+
+    /**
+     * @return Entity|void
+     */
+    public function getEntities()
+    {
+        return Entity::query()
+            ->where('group', [
+                'billing' => $this->ipGroupChoice(),
+            ])
+            ->where('server', 'none')
+            ->first()
+            ;
+    }
+
+    /**
+     * @return Server|void
+     */
+    public function getServer()
+    {
+        return $this->provision->getServer(
+            $this->getFilters()
+        );
     }
 
     /**
@@ -153,23 +184,26 @@ class ServerProvisioner
     }
 
     /**
+     * @return string
+     */
+    private function ipGroupChoice()
+    {
+        return $this->config->getOption('Datacenter Location');
+    }
+
+    /**
      * @return array
      */
     public function getFilters()
     {
         $choices = $this->config->options();
-        $ram = $choices['Memory'];
-        $cpu = $this->config->option(WhmcsConfig::CPU_BILLING_ID);
-        $disks = $this->multiChoice($choices, 'SSD Bay %d');
-        $addons = $this->multiChoice($choices, 'Add On %d');
-        $ipGroup = $choices['Datacenter Location'];
 
         return [
-            'mem_billing' => $ram,
-            'cpu_billing' => $cpu,
-            'disks_billing' => $disks,
-            'addons_billing' => $addons,
-            'ip_group_billing' => $ipGroup,
+            'mem_billing' => $this->config->getOption('Memory'),
+            'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
+            'disks_billing' =>  $this->multiChoice($choices, 'SSD Bay %d'),
+            'addons_billing' => $this->multiChoice($choices, 'Add On %d'),
+            'ip_group_billing' => $this->ipGroupChoice(),
         ];
     }
 
