@@ -153,6 +153,7 @@ class ServerProvisioner
             ->where('group', [
                 'billing' => $this->ipGroupChoice(),
             ])
+            ->where('billing_id', $this->getIps())
             ->where('server', 'none')
             ->first()
             ;
@@ -192,6 +193,14 @@ class ServerProvisioner
     }
 
     /**
+     * @return string
+     */
+    private function getIps()
+    {
+        return $this->config->getOption('IPv4 Addresses');
+    }
+
+    /**
      * @return array
      */
     public function getFilters()
@@ -219,12 +228,11 @@ class ServerProvisioner
         $params = $this->whmcs->getParams();
 
         $portSpeed = $choices['Network Port Speed'];
-        $ips = $choices['IPv4 Addresses'];
         $nickname = $params['domain'];
         $rateLimit = array_get($choices, 'DDoS Protection');
 
         return [
-            'ips_billing' => $ips,
+            'ips_billing' => $this->getIps(),
             'pxe_profile_billing' => $osChoice,
             'port_speed_billing' => $portSpeed,
             'nickname' => $nickname,
