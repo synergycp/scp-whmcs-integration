@@ -2,6 +2,7 @@
 
 namespace Scp\Whmcs\Whmcs;
 
+use Scp\Server;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
 use Scp\Whmcs\Server\Usage\UsageUpdater;
 use Scp\Whmcs\Server\ServerService;
@@ -167,6 +168,83 @@ class WhmcsEvents
     }
 
     /**
+     * Triggered on a Suspension event.
+     *
+     * @return string
+     */
+    public function suspend()
+    {
+        try {
+            $server = $this->server->currentOrFail();
+
+            try {
+                $this->createSuspensionTicket(
+                    // TODO: differentiate between auto and regular suspend.
+                    $server->autoSuspend()
+                );
+
+                return static::SUCCESS;
+            } catch (Server\Exceptions\AutoSuspendIgnored $exc) {
+                $this->createVipSuspensionTicket($server);
+
+                return static::SUCCESS;
+            }
+        } catch (\Exception $exc) {
+            $this->logException($exc, __FUNCTION__);
+
+            return $exc->getMessage();
+        }
+    }
+
+    /**
+     * Triggered on an Unsuspension event.
+     *
+     * @return string
+     */
+    public function unsuspend()
+    {
+        try {
+            $this->server
+                ->currentOrFail()
+                ->unsuspend()
+                ;
+
+            return static::SUCCESS;
+        } catch (\Exception $exc) {
+            $this->logException($exc, __FUNCTION__);
+
+            return $exc->getMessage();
+        }
+    }
+
+    /**
+     * @param \Exception $exc
+     * @param string     $action
+     */
+    private function logException(\Exception $exc, $action)
+    {
+        $this->log->activity(
+            'SynergyCP: error during %s: %s',
+            $action,
+            $exc->getMessage()
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public static function functions()
+    {
+        return [
+            static::PROVISION => 'provision',
+            static::USAGE => 'usage',
+            static::TERMINATE => 'terminate',
+            static::SUSPEND => 'suspend',
+            static::UNSUSPEND => 'unsuspend',
+        ];
+    }
+
+    /**
      * Delete the current server using the action chosen in settings.
      *
      * @return string
@@ -177,11 +255,26 @@ class WhmcsEvents
     {
         switch ($act = $this->config->option(WhmcsConfig::DELETE_ACTION)) {
         case WhmcsConfig::DELETE_ACTION_WIPE:
-            $this->server
-                ->currentOrFail()
-                ->wipe()
-                ;
-            $this->wipeProductDetails();
+            try {
+                $server = $this->server->currentOrFail();
+
+                try {
+                    // TODO: differentiate between auto and regular suspend.
+                    $server->autoWipe();
+                    $this->wipeProductDetails();
+
+
+                    return static::SUCCESS;
+                } catch (Server\Exceptions\AutoWipeIgnored $exc) {
+                    $this->createVipTerminationTicket($server);
+
+                    return static::SUCCESS;
+                }
+            } catch (\Exception $exc) {
+                $this->logException($exc, __FUNCTION__);
+
+                return $exc->getMessage();
+            }
             break;
         case WhmcsConfig::DELETE_ACTION_TICKET:
             $this->createCancellationTicket();
@@ -255,72 +348,36 @@ class WhmcsEvents
     }
 
     /**
-     * Triggered on a Suspension event.
-     *
-     * @return string
+     * Run the create cancellation ticket delete action.
      */
-    public function suspend()
+    protected function createVipSuspensionTicket()
     {
-        try {
-            $this->createSuspensionTicket(
-                $this->server
-                    ->currentOrFail()
-                    ->suspend()
-            );
-
-            return static::SUCCESS;
-        } catch (\Exception $exc) {
-            $this->logException($exc, __FUNCTION__);
-
-            return $exc->getMessage();
-        }
-    }
-
-    /**
-     * Triggered on an Unsuspension event.
-     *
-     * @return string
-     */
-    public function unsuspend()
-    {
-        try {
-            $this->server
-                ->currentOrFail()
-                ->unsuspend()
-                ;
-
-            return static::SUCCESS;
-        } catch (\Exception $exc) {
-            $this->logException($exc, __FUNCTION__);
-
-            return $exc->getMessage();
-        }
-    }
-
-    /**
-     * @param \Exception $exc
-     * @param string     $action
-     */
-    private function logException(\Exception $exc, $action)
-    {
-        $this->log->activity(
-            'SynergyCP: error during %s: %s',
-            $action,
-            $exc->getMessage()
+        $message = sprintf(
+            'This is a notice that the server with billing ID %d requires suspension. We will not suspend any services on your account automatically. We will be following up with you shortly to discuss the reason for this automated message.',
+            $this->server->currentBillingId()
         );
+
+        $this->ticket->create([
+            'clientid' => $this->config->get('userid'),
+            'subject' => 'Pending Server Suspension',
+            'message' => $message,
+        ]);
     }
 
     /**
-     * @return array
+     * Run the create cancellation ticket delete action.
      */
-    public static function functions()
+    protected function createVipTerminationTicket()
     {
-        return [
-            static::PROVISION => 'provision',
-            static::USAGE => 'usage',
-            static::TERMINATE => 'terminate',
-            static::SUSPEND => 'suspend',
-            static::UNSUSPEND => 'unsuspend',
-        ];
+        $message = sprintf(
+            'This is a notice that the server with billing ID %d requires termination. We will not terminate any services on your account automatically. We will be following up with you shortly to discuss the reason for this automated message.',
+            $this->server->currentBillingId()
+        );
+
+        $this->ticket->create([
+            'clientid' => $this->config->get('userid'),
+            'subject' => 'Pending Server Termination',
+            'message' => $message,
+        ]);
     }
 }
