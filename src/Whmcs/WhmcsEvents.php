@@ -353,7 +353,7 @@ class WhmcsEvents
     protected function createVipSuspensionTicket()
     {
         $message = sprintf(
-            'This is a notice that the server with billing ID %d requires suspension. We will not suspend any services on your account automatically. We will be following up with you shortly to discuss the reason for this automated message.',
+            'This is a notice that the server with billing ID %d requires suspension. We will not suspend any services on your account automatically, so this ticket will be manually reviewed before processing.',
             $this->server->currentBillingId()
         );
 
@@ -370,7 +370,7 @@ class WhmcsEvents
     protected function createVipTerminationTicket()
     {
         $message = sprintf(
-            'This is a notice that the server with billing ID %d requires termination. We will not terminate any services on your account automatically. We will be following up with you shortly to discuss the reason for this automated message.',
+            'This is a notice that the server with billing ID %d requires termination. We will not terminate any services on your account automatically, so ithis tickett will be manually reviewed before processing.',
             $this->server->currentBillingId()
         );
 
