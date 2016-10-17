@@ -516,7 +516,7 @@ class WhmcsButtons
         }
 
         $url = sprintf(
-            '%s/admin/servers/manage/%d',
+            '%s/admin#/hardware/server/%d',
             $this->api->siteUrl(),
             $server->id
         );
