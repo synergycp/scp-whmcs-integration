@@ -246,10 +246,8 @@ class WhmcsEvents
 
     /**
      * Delete the current server using the action chosen in settings.
-     *
      * @return string
-     *
-     * @throws \RuntimeException
+     * @throws \Exception
      */
     protected function doDeleteAction()
     {
@@ -353,7 +351,7 @@ class WhmcsEvents
     protected function createVipSuspensionTicket()
     {
         $message = sprintf(
-            'This is a notice that the server with billing ID %d requires suspension. We will not suspend any services on your account automatically, so this ticket will be manually reviewed before processing.',
+            'This is a notice that the server with billing ID %d is pending suspension. We will not suspend any services on your account automatically, so this ticket will be manually reviewed before processing.',
             $this->server->currentBillingId()
         );
 
@@ -370,7 +368,7 @@ class WhmcsEvents
     protected function createVipTerminationTicket()
     {
         $message = sprintf(
-            'This is a notice that the server with billing ID %d requires termination. We will not terminate any services on your account automatically, so ithis tickett will be manually reviewed before processing.',
+            'This is a notice that the server with billing ID %d is pending termination. We will not terminate any services on your account automatically, so this ticket will be manually reviewed before processing.',
             $this->server->currentBillingId()
         );
 
