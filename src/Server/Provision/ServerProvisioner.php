@@ -95,7 +95,8 @@ class ServerProvisioner
     }
 
     /**
-     * @return Server|null
+     * @return void|Server
+     * @throws \Exception
      */
     public function create()
     {
@@ -161,6 +162,7 @@ class ServerProvisioner
 
     /**
      * @return Server|void
+     * @throws \Exception
      */
     public function getServer()
     {
@@ -202,6 +204,7 @@ class ServerProvisioner
 
     /**
      * @return array
+     * @throws \Exception
      */
     public function getFilters()
     {
@@ -221,6 +224,7 @@ class ServerProvisioner
      * @param string $password
      *
      * @return array
+     * @throws \Exception
      */
     private function getServerSettings($osChoice, $password)
     {
@@ -229,7 +233,6 @@ class ServerProvisioner
 
         $portSpeed = $choices['Network Port Speed'];
         $nickname = $params['domain'];
-        $rateLimit = array_get($choices, 'DDoS Protection');
 
         return [
             'ips_billing' => $this->getIps(),
@@ -237,9 +240,11 @@ class ServerProvisioner
             'port_speed_billing' => $portSpeed,
             'nickname' => $nickname,
             'password' => $password,
-            'ddos' => array_filter([
-                'rate-limit' => $rateLimit ?: null,
-            ]),
+            'server' => [
+                'fields' => array_filter([
+                    'pkg.ddos.rate-limit' => array_get($choices, 'DDoS Protection'),
+                ]),
+            ],
             'billing' => [
                 'id' => $this->config->get('serviceid'),
                 'max_bandwidth' => $choices['Bandwidth'],
