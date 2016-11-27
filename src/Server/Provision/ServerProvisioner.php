@@ -100,8 +100,16 @@ class ServerProvisioner
      */
     public function create()
     {
-        $choices = $this->config->options();
         $params = $this->whmcs->getParams();
+        // TODO: clean this logic up with specific exceptions
+
+        if (!$this->getEntities()) {
+            $this->createTicket($params);
+
+            return;
+        }
+
+        $choices = $this->config->options();
         $osChoicesString = sprintf(
             '%s%s%s',
             $this->config->option(WhmcsConfig::PRE_INSTALL),
@@ -140,9 +148,21 @@ class ServerProvisioner
             throw new \Exception('No matching Server found in inventory');
         }
 
-        if (!$this->getEntities()) {
-            throw new \Exception('No mathcing Entity found in inventory');
+        $this->checkEntities();
+    }
+
+    /**
+     * @return Entity|void
+     *
+     * @throws \Exception
+     */
+    private function checkEntities()
+    {
+        if ($entities = $this->getEntities()) {
+            return $entities;
         }
+
+        throw new \Exception('No matching Entity found in inventory');
     }
 
     /**
