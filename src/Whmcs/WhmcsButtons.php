@@ -219,8 +219,12 @@ class WhmcsButtons
      */
     protected function switchActions(Server $server)
     {
-        if (!$this->inAdmin && !$server->access()->now->switch) {
-            return [];
+        if (!$this->inAdmin) {
+            $access = $server->access();
+
+            if (!$access->switch || !$access->is_active) {
+                return [];
+            }
         }
 
         return [
@@ -236,8 +240,12 @@ class WhmcsButtons
      */
     protected function ipmiActions(Server $server)
     {
-        if (!$this->inAdmin && !$server->access()->now->ipmi) {
-            return [];
+        if (!$this->inAdmin) {
+            $access = $server->access();
+
+            if (!$access->ipmi || !$access->is_active) {
+                return [];
+            }
         }
 
         return [
@@ -257,8 +265,12 @@ class WhmcsButtons
      */
     protected function pxeActions(Server $server)
     {
-        if (!$this->inAdmin && !$server->access()->now->pxe) {
-            return [];
+        if (!$this->inAdmin) {
+            $access = $server->access();
+
+            if (!$access->pxe || !$access->is_active) {
+                return [];
+            }
         }
 
         return [

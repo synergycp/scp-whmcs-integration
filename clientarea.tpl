@@ -43,7 +43,7 @@
   </div>
 </div>
 
-{if $server->ipmi_access_now}
+{if $server->access->ipmi && $server->access->is_active}
   <div class="row">
     <div class="col-sm-5 text-right">
       <strong>IPMI Details</strong>
@@ -59,7 +59,7 @@
   </div>
 {/if}
 
-{if $server->pxe_access_now}
+{if $server->access->pxe && $server->access->is_active}
   <div class="row" id="scp-pxe-status">
     <div class="col-sm-5 text-right">
       <strong>OS Reload</strong>
