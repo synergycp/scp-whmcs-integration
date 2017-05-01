@@ -65,6 +65,11 @@ class ServerProvisioner
     protected $fields;
 
     /**
+     * @var int|null
+     */
+    private $softRaid;
+
+    /**
      * @param Whmcs                     $whmcs
      * @param Database                  $database
      * @param LogFactory                $log
@@ -100,8 +105,16 @@ class ServerProvisioner
      */
     public function create()
     {
-        $choices = $this->config->options();
         $params = $this->whmcs->getParams();
+        // TODO: clean this logic up with specific exceptions
+
+        if (!$this->getEntities()) {
+            $this->createTicket($params);
+
+            return;
+        }
+
+        $choices = $this->config->options();
         $osChoicesString = sprintf(
             '%s%s%s',
             $this->config->option(WhmcsConfig::PRE_INSTALL),
@@ -140,9 +153,21 @@ class ServerProvisioner
             throw new \Exception('No matching Server found in inventory');
         }
 
-        if (!$this->getEntities()) {
-            throw new \Exception('No mathcing Entity found in inventory');
+        $this->checkEntities();
+    }
+
+    /**
+     * @return Entity|void
+     *
+     * @throws \Exception
+     */
+    private function checkEntities()
+    {
+        if ($entities = $this->getEntities()) {
+            return $entities;
         }
+
+        throw new \Exception('No matching Entity found in inventory');
     }
 
     /**
@@ -214,7 +239,7 @@ class ServerProvisioner
             'mem_billing' => $this->config->getOption('Memory'),
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
             'disks_billing' =>  $this->multiChoice($choices, 'SSD Bay %d'),
-            'addons_billing' => $this->multiChoice($choices, 'Add On %d'),
+            'addons_billing' => $this->addons($choices),
             'ip_group_billing' => $this->ipGroupChoice(),
         ];
     }
@@ -264,9 +289,10 @@ class ServerProvisioner
      */
     private function queueInstalls(Server $server, array $osChoices, $password)
     {
+        $raidLevel = $this->getRaidLevel();
         $choices = new Collection($osChoices);
 
-        $choices->reduce(function ($install, $choice) use ($password, $server) {
+        $choices->reduce(function ($install, $choice) use ($password, $server, $raidLevel) {
             $install = $install ?: $server->installs()->get()->items()->last();
             $install = $server->installs()->model()->save([
                 'pxe_profile_billing' => trim($choice),
@@ -274,6 +300,9 @@ class ServerProvisioner
                     'id' => $install->id,
                 ],
                 'password' => $password,
+                'disk' => [
+                    'raid' => $raidLevel,
+                ],
             ]);
 
             return $install;
@@ -349,5 +378,38 @@ class ServerProvisioner
             ->first()
             ->name
             ;
+    }
+
+    /**
+     * @return void|int
+     */
+    private function getRaidLevel()
+    {
+        return $this->softRaid;
+    }
+
+    /**
+     * @param array $choices
+     *
+     * @return array
+     */
+    private function addons(array $choices)
+    {
+        $addons = $this->multiChoice($choices, 'Add On %d');
+
+        array_filter($addons, function ($addOn) {
+            switch ($addOn) {
+            case 'ADD-RAID1':
+                $this->softRaid = 1;
+                break;
+            case 'ADD-RAID0':
+                $this->softRaid = 0;
+                break;
+            default:
+                return true;
+            }
+
+            return false;
+        });
     }
 }
