@@ -22,7 +22,7 @@ class Api extends OriginalApi
         $hostname = Arr::get($params, 'serverhostname');
 
         if (!$apiKey) {
-            throw new \RuntimeException('Missing SynergyCP Server details');
+            throw new \RuntimeException('This host is not linked to SynergyCP (server = 0)');
         }
 
         $parsed = parse_url($hostname);
