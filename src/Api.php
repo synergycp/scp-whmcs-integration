@@ -11,6 +11,17 @@ use Scp\Support\Arr;
 
 class Api extends OriginalApi
 {
+    /**
+     * @var Whmcs
+     */
+    protected $whmcs;
+
+    /**
+     * Api constructor.
+     *
+     * @param Whmcs        $whmcs
+     * @param ApiTransport $transport
+     */
     public function __construct(
         Whmcs $whmcs,
         ApiTransport $transport
@@ -22,7 +33,8 @@ class Api extends OriginalApi
         $hostname = Arr::get($params, 'serverhostname');
 
         if (!$apiKey) {
-            throw new \RuntimeException('This host is not linked to SynergyCP (server = 0)');
+            // This is now processed later because it breaks the product config page.
+            //throw new \RuntimeException('This host is not linked to SynergyCP (server = 0)');
         }
 
         $parsed = parse_url($hostname);
@@ -42,6 +54,15 @@ class Api extends OriginalApi
         parent::__construct($url, $apiKey);
 
         $this->setTransport($transport);
+    }
+
+    public function call()
+    {
+        if (!$this->url || !$this->apiKey) {
+            throw new \RuntimeException('This host is not linked to SynergyCP (server = 0)');
+        }
+
+        return call_user_func_array(['parent', 'call'], func_get_args());
     }
 
     /**
