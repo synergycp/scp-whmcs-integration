@@ -180,7 +180,8 @@ class WhmcsEvents
             try {
                 $this->createSuspensionTicket(
                     // TODO: differentiate between auto and regular suspend.
-                    $server->autoSuspend()
+                    // TODO: get suspension reason
+                    $server->autoSuspend("See WHMCS")
                 );
 
                 return static::SUCCESS;
