@@ -588,11 +588,26 @@ class WhmcsButtons
     {
         $server = $this->getServer();
         $url = sprintf(
-            'server/%d/ipmi',
+            'server/%d/control',
             $server->id
         );
 
-        return $this->api->asClient()->patch($url, $data);
+        $items = $this
+            ->api
+            ->asClient()
+            ->get($url)
+            ->data()
+            ->data
+            ;
+
+        if (!count($items)) {
+            return;
+        }
+
+        return $this->api->asClient()->post(
+            $url.'/'.$items[0]->id.'/command',
+            $data
+        );
     }
 
     /**
