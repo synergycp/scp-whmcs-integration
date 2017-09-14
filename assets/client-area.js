@@ -77,7 +77,7 @@ SCP.ClientArea = {
       ;
   },
   refreshOperatingSystems: function () {
-    SCP.API.call('GET', 'pxe/template')
+    SCP.API.call('GET', 'pxe/profile')
       .success(function (data) {
         this.setOperatingSystems(data.data);
       }.bind(this));
