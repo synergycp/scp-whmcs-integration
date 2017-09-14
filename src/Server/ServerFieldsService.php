@@ -50,11 +50,13 @@ class ServerFieldsService
             'assignedips' => $this->assignedIps($server),
         ];
 
-        return $this->database
+        $this->database
             ->table('tblhosting')
             ->where('id', $serviceId)
             ->update($fields)
             ;
+
+        return true;
     }
 
     /**
