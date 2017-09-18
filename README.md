@@ -1,9 +1,8 @@
 # SynergyCP WHMCS Integration
 
 ### Setup
- - Download this directory to a machine with [Composer](https://getcomposer.org/) installed
- - Run `composer install`
- - (Optionally:) Run the tests `phpunit`
+
+ - Download and extract the WHMCS integration from: [SynergyCP](https://install.synergycp.com/bm/integration/whmcs.tgz)
  - Copy the entire directory via FTP, SCP, etc. to `/WHMCS_PATH/modules/servers/synergycp/`
  - Go to Synergy. Create an API Key, and copy the key.
  - Go to WHMCS Admin panel.
@@ -18,3 +17,4 @@
  - Click Create a New Product
    - Product Type: Dedicated/VPS Server
    - Module Settings > Module Name: Synergy Control Panel
+   - Configurable Options should include some named: Add On 1, Add On 2, etc. and SSD Bay 1, SSD Bay 2, etc.
