@@ -397,7 +397,7 @@ class ServerProvisioner
     {
         $addons = $this->multiChoice($choices, 'Add On %d');
 
-        array_filter($addons, function ($addOn) {
+        return array_filter($addons, function ($addOn) {
             switch ($addOn) {
             case 'ADD-RAID1':
                 $this->softRaid = 1;
