@@ -32,11 +32,11 @@ The billing ID is specified before the value shown to the user separated by a Un
  
 ![selection](https://user-images.githubusercontent.com/229041/30526732-a3009a72-9bd4-11e7-9a83-cf2f963f490c.png)
  
-Options must include (and be called):
+Every SynergyCP product on WHMCS must include the following Configurable Options (names must match exactly):
 
 - Memory (RAM)
 - Datacenter Location (IP Group)
 - Network Port Speed (Switch Port Speed)
 - IPv4 Addresses (IP Entity)
-- Add On 1, Add On 2, etc. (any number)
-- SSD Bay 1, SSD Bay 2, etc. (any number)     
+- SSD Bay 1, SSD Bay 2, etc. (any number)
+- Optional: Add On 1, Add On 2, etc. (any number)
