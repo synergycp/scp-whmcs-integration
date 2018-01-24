@@ -238,7 +238,7 @@ class ServerProvisioner
         return [
             'mem_billing' => $this->config->getOption('Memory'),
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
-            'disks_billing' =>  $this->multiChoice($choices, 'SSD Bay %d'),
+            'disks_billing' =>  $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/'),
             'addons_billing' => $this->addons($choices),
             'ip_group_billing' => $this->ipGroupChoice(),
         ];
@@ -311,7 +311,7 @@ class ServerProvisioner
 
     /**
      * @param array  $choices
-     * @param string $format  format string for the keys of the field.
+     * @param string $format  regex string for the keys of the field.
      *
      * @return array
      */
@@ -319,11 +319,9 @@ class ServerProvisioner
     {
         $result = [];
 
-        for ($i = 1; $i <= 8; ++$i) {
-            $key = sprintf($format, $i);
-
-            if (!empty($choices[$key]) && $choices[$key] != 'None') {
-                $result[] = $choices[$key];
+        foreach ($choices as $key => $value) {
+            if ($value !== 'None' && preg_match($format, $key)) {
+                $result[] = $value;
             }
         }
 
@@ -395,7 +393,7 @@ class ServerProvisioner
      */
     private function addons(array $choices)
     {
-        $addons = $this->multiChoice($choices, 'Add On %d');
+        $addons = $this->multiChoice($choices, '/Add On ([0-9]+)/');
 
         return array_filter($addons, function ($addOn) {
             switch ($addOn) {
