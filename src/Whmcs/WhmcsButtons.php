@@ -13,6 +13,7 @@ use Scp\Whmcs\Whmcs\WhmcsConfig;
 use Scp\Entity\Entity;
 use Scp\Api\ApiKey;
 use Scp\Api\ApiSingleSignOn;
+use function sprintf;
 
 /**
  * Handle the buttons that appear on WHMCS.
@@ -527,13 +528,12 @@ class WhmcsButtons
             $this->exitWithMessage($exc->getMessage());
         }
 
-        $url = sprintf(
-            '%s/admin#/hardware/server/%d',
-            $this->api->siteUrl(),
-            $server->id
+        $this->transferTo(
+            $this->api->getAdminUrlFromApi(sprintf(
+                'hardware/server/%d',
+                $server->id
+            ))
         );
-
-        $this->transferTo($url);
     }
 
     /**

@@ -22,7 +22,7 @@
 - Module Settings:
   - Module Name: Synergy Control Panel
   - Fill in CPU Billing ID from SynergyCP
-  - We recommend format-quick as the Pre-OS install.
+  - We recommend format-quick as the Pre-OS install. Formats are required before some OS reloads to get rid of the old disk partition table.
  
 ### Configurable Options
 
@@ -38,5 +38,5 @@ Every SynergyCP product on WHMCS must include the following Configurable Options
 - Datacenter Location (IP Group)
 - Network Port Speed (Switch Port Speed)
 - IPv4 Addresses (IP Entity)
-- SSD Bay 1, SSD Bay 2, etc. (any number)
-- Optional: Add On 1, Add On 2, etc. (any number)
+- Add On 1, Add On 2, etc. (any number). Use ADD-RAID1 and ADD-RAID0 as billing IDs for automatic software RAID configuration. 
+- Drive Bay 1, Drive Bay 2, etc. (any number). The value should be None for empty disk bays.
