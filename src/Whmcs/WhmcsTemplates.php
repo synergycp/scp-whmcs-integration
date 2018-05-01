@@ -58,13 +58,12 @@ class WhmcsTemplates
             return;
         }
 
+        $server = $server->full();
         $billingId = $this->server->currentBillingId();
-
         $urlAction = sprintf(
             'clientarea.php?action=productdetails&id=%d&modop=custom&a=',
             $billingId
         );
-
         $apiKey = $this->client->apiKey();
         $urlApi = $this->api->baseUrl();
         $password = $this->generatePassword(10);

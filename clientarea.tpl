@@ -43,17 +43,17 @@
   </div>
 </div>
 
-{if $server->access->ipmi && $server->access->is_active}
+{if $server->access->ipmi && $server->access->is_active && $server->ipmi}
   <div class="row">
     <div class="col-sm-5 text-right">
       <strong>IPMI Details</strong>
     </div>
     <div class="col-sm-7 text-left">
-      <a href="http://{$server->ipmi_ip}" target="_blank">{$server->ipmi_ip}</a><br />
-      - Username: {$server->ipmi_client_user|default:'None'}
-      (<a href="{$url_action}{if $server->ipmi_client_user}btn_ipmi_client_delete{else}btn_ipmi_client_create{/if}"
-        >{if $server->ipmi_client_user}Delete{else}Create{/if}</a>)<br />
-      - Password: {$server->ipmi_client_pass|default:'None'}<br />
+      <a href="http://{$server->ipmi->ip}" target="_blank">{$server->ipmi->ip}</a><br />
+      - Username: {$server->ipmi->client->username|default:'None'}
+      (<a href="{$url_action}{if $server->ipmi->client->username}btn_ipmi_client_delete{else}btn_ipmi_client_create{/if}"
+        >{if $server->ipmi->client->username}Delete{else}Create{/if}</a>)<br />
+      - Password: {$server->ipmi->client->password|default:'None'}<br />
       <br />
     </div>
   </div>
