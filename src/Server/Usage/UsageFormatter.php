@@ -11,7 +11,7 @@ class UsageFormatter
 
     public function __construct()
     {
-        $this->bitsToMB = 1.25 * pow(10, -7);
+        $this->bitsToMB = 1/8 * pow(10, -6);
     }
 
     /**

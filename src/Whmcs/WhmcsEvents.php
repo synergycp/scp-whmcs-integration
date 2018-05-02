@@ -141,12 +141,7 @@ class WhmcsEvents
      */
     public function usage()
     {
-        // TODO usage for entire server, not billing ID
-        return static::SUCCESS;
-
-        $billingId = $this->server->currentBillingId();
-
-        return $this->usage->runAndLogErrors($billingId)
+        return $this->usage->runAndLogErrors()
             ? static::SUCCESS
             : 'Error running usage update';
     }
