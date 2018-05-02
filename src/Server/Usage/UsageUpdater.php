@@ -52,14 +52,12 @@ class UsageUpdater
     }
 
     /**
-     * @param string $billingId
-     *
      * @return bool
      */
-    public function runAndLogErrors($billingId)
+    public function runAndLogErrors()
     {
         try {
-            $this->run($billingId);
+            $this->run();
 
             return true;
         } catch (ApiError $exc) {
@@ -74,92 +72,46 @@ class UsageUpdater
 
     /**
      * @return bool
+     * @throws ApiError
      */
-    public function run($billingId)
+    public function run()
     {
-        $this->log->activity(
-            'SynergyCP: Updating billing ID %s',
-            $billingId
-        );
-
         // Get bandwidth from SynergyCP
-        $server = $this->servers->findByBillingId($billingId);
-        if (!$server) {
-            throw new ApiError(sprintf(
-                'Server with billing ID: %s not found on Synergy',
-                $billingId
-            ));
-        }
-
-        $updates = $this->prepareUpdates($server);
-
-        try {
-            $this->database->table('tblhosting')
-                ->where('id', $billingId)
-                ->update($updates);
-        } catch (\Exception $exc) {
-            $this->log->activity(
-                'SynergyCP: Usage Update failed: %s',
-                $exc->getMessage()
-            );
-
-            return false;
-        }
+        $fail = false;
+        Server::query()->where('integration_id', 'me')->chunk(100, function ($servers) use (&$fail) {
+            $servers->map(function (Server $server) use (&$fail) {
+                try {
+                    $this->database
+                        ->table('tblhosting')
+                        ->where('id', $server->billing->id)
+                        ->update($this->prepareUpdates($server));
+                } catch (\Exception $exc) {
+                    $this->log->activity(
+                        'SynergyCP: Usage Update failed: %s',
+                        $exc->getMessage()
+                    );
+                    $fail = true;
+                }
+            });
+        });
 
         $this->log->activity('SynergyCP: Completed usage update');
 
-        return true;
-    }
-
-    private function prepareUpdates(Server $server)
-    {
-        $bandwidth = $this->getBandwidth($server);
-
-        return [
-            //"diskused" => $values['diskusage'],
-            //"dislimit" => $values['disklimit'],
-            'bwusage' => $this->format->bitsToMB($bandwidth->used, 3) * 8,
-            'bwlimit' => $this->format->bitsToMB($bandwidth->limit, 3) * 8,
-            'lastupdate' => 'now()',
-        ];
+        return !$fail;
     }
 
     /**
-     * Get bandwidth usage data for the given Server.
+     * @param Server $server
      *
-     * @param  Server $server
-     *
-     * @return stdClass
+     * @return array
      */
-    private function getBandwidth(Server $server)
+    private function prepareUpdates(Server $server)
     {
-        $url = sprintf(
-            'server/%d/port',
-            $server->id
-        );
-        $data = [
-            'is_billable' => true,
+        $usage = $server->usage;
+        return [
+            'bwusage' => $usage ? $this->format->bitsToMB($usage->used, 3) : 0,
+            'bwlimit' => $usage ? $this->format->bitsToMB($usage->max, 3) : 0,
+            'lastupdate' => 'now()',
         ];
-
-        $ports = $this->api->get($url, $data)->data()->data;
-
-        $result = new \stdClass;
-        $result->used = 0;
-        $result->limit = 0;
-
-        foreach ($ports as $port) {
-            $portUrl = sprintf(
-                '%s/%d/bandwidth/usage',
-                $url,
-                $port->id
-            );
-
-            $bandwidth = $this->api->get($portUrl)->data();
-
-            $result->used += $bandwidth->used;
-            $result->limit += $bandwidth->max;
-        }
-
-        return $result;
     }
 }
