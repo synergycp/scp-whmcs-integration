@@ -1,6 +1,6 @@
 ### Setup
 
- 1. Download and extract the WHMCS integration [here](https://install.synergycp.com/bm/integration/whmcs.tgz)
+ 1. Download and extract the WHMCS integration [here](https://install.synergycp.com/bm/integration/whmcs/synergycp.zip)
  2. Copy the entire directory via FTP, SCP, etc. to `/<WHMCS_PATH>/modules/servers/synergycp/`
  3. Go to SynergyCP Admin > System > Integrations.
  4. Add an Integration for WHMCS.
@@ -40,13 +40,12 @@ The billing ID is specified before the value shown to the user separated by a Un
  
 Every SynergyCP product on WHMCS must include the following Configurable Options (names must match exactly):
 
-1. Memory (RAM)
-2. Datacenter Location (IP Group)
-3. Network Port Speed (Switch Port Speed)
-4. IPv4 Addresses (IP Entity)
-5. Add On 1, Add On 2, etc. (any number).
-    - Use ADD-RAID1 and ADD-RAID0 as billing IDs for automatic software RAID configuration. 
-6. Drive Bay 1, Drive Bay 2, etc. (any number). The value should be None for empty disk bays.
-
-Optional configuration options:
-1. Bandwidth (e.g. 500GB, 20TB) 
+| WHMCS Configurable Field Name                          | Example Field Value             | Special Notes                                                                          |
+|--------------------------------------------------------|----------------------------------------------|----------------------------------------------------------------------------------------|
+| Memory                                                 | 8GB&#124;8GB RAM                             |                                                                                        |
+| Datacenter Location                                    | LOC-LA&#124;Los Angeles                      | This must correspond to an IP Group in SynergyCP.                                                         |
+| Network Port Speed                                     | 1GBPS&#124;Gigabit Uplink                    |                                                                                        |
+| IPv4 Addresses                                         | IP-29&#124;/29 Block (5 Usable IP Addresses) |                                                                                        |
+| Add On 1, Add On 2, etc. (any number of entries)       | HW-RAID&#124;Hardware RAID Controller        | Use ADD- RAID1 and ADD-RAID0 as billing IDs for automatic software RAID configuration. |
+| Drive Bay 1, Drive Bay 2, etc. (any number of entries) | 1TB-HDD&#124;1 TB Hard Drive                 | The billing ID value should be None for empty disk bays.                               |
+| Bandwidth                                              | 20TB&#124;20 TB Bandwidth                    | Optional. Any human-readable format works for billing ID (`500GB`, `1TB`, etc.)        |
