@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-tar --transform 's|^|/synergycp/|' -zcvf /scp/install.synergycp.com/bm/integration/whmcs.tgz *
+OUTFILE=/scp/install.synergycp.com/bm/integration/whmcs/synergycp.zip
+zip -r "$OUTFILE" . -x ".git*" ".idea/*" "bin/*"
