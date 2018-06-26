@@ -1,24 +1,30 @@
 {* This CSS is important for proper rendering of hidden elements on the page, so must be at the top. *}
 <link type="text/css" rel="stylesheet" href="{$WEB_ROOT}{$MODULE_FOLDER}/assets/base.css" />
 
+{*
+{if count($ips) > 1}
 <div class="row">
   <div class="col-sm-5 text-right">
-    <strong>IP Allocation</strong>
+    <strong>Extra IP Allocations</strong>
   </div>
   <div class="col-sm-7 text-left">
-    {foreach from=$ips item=ip}
-      <strong>{$ip->name}</strong><br />
-      - Usable IP(s): {$ip->full_ip}<br />
-      - Gateway IP: {$ip->gateway}<br />
-      - Subnet Mask: {$ip->subnet_mask}<br />
-      {if $ip->v6_address}
-        - IPv6 Address: {$ip->v6_address}<br />
-        - IPv6 Gateway: {$ip->v6_gateway}<br />
+    {foreach from=$ips item=ip key=index}
+      {if $index > 0}
+        <strong>{$ip->name}</strong><br />
+        - Usable IP(s): {$ip->full_ip}<br />
+        - Gateway IP: {$ip->gateway}<br />
+        - Subnet Mask: {$ip->subnet_mask}<br />
+        {if $ip->v6_address}
+          - IPv6 Address: {$ip->v6_address}<br />
+          - IPv6 Gateway: {$ip->v6_gateway}<br />
+        {/if}
+        <br />
       {/if}
-      <br />
     {/foreach}
   </div>
 </div>
+{/if}
+*}
 
 <div class="row">
   <div class="col-sm-5 text-right">
