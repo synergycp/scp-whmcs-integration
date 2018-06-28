@@ -27,8 +27,11 @@
 3. Product Name: The CPU name (e.g. E3-1270v6, Dual E5-2620v4)
 4. Module Settings:
     - Module Name: Synergy Control Panel
-    - Fill in CPU Billing ID from SynergyCP
-    - We recommend format-quick as the Pre-OS install. Formats are required before some OS reloads to get rid of the old disk partition table.
+    - CPU Billing ID: Whatever the CPU Billing ID is on SynergyCP
+    - API User: The username of any WHMCS admin that has API access enabled.
+    - PXE/IPMI/Switch Access: Select which permissions you wish to grant to each client on any automated provisions.
+    - Termination Action: What to do when a client's server is terminated due to billing issues. Note that this is overridden to create ticket for VIP clients no matter what. 
+    - Pre-OS Install: We recommend format-quick as the Pre-OS install. Formats are required before some OS reloads to get rid of the old disk partition table.
  
 ### Configurable Options
 
@@ -44,8 +47,9 @@ Every SynergyCP product on WHMCS must include the following Configurable Options
 |--------------------------------------------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------  |
 | Memory                                                 | 8GB&#124;8GB RAM                                          |                                                                                          |
 | Datacenter Location                                    | LOC-LA&#124;Los Angeles                                   | This must correspond to an IP Group in SynergyCP.                                        |
-| Network Port Speed                                     | 1GBPS&#124;Gigabit Uplink                                 |                                                                                          |
+| Network Port Speed                                     | speed-1000&#124;Gigabit Uplink                            |                                                                                          |
 | IPv4 Addresses                                         | IP-29&#124;/29 Block (5 Usable IP Addresses)              |                                                                                          |
 | Add On 1, Add On 2, etc. (any number of entries)       | HW-RAID&#124;Hardware RAID Controller                     | Use ADD- RAID1 and ADD-RAID0 as billing IDs for automatic software RAID configuration.   |
 | Drive Bay 1, Drive Bay 2, etc. (any number of entries) | 1TB-HDD&#124;1 TB Hard Drive                              | The billing ID value should be None for empty disk bays.                                 |
+| Operating System                                       | os-centos6&#124;CentOS 6                                  | The billing ID must match an OS Reload Profile's Billing ID on SynergyCP |
 | Bandwidth                                              | 20000GB&#124;20 TB Bandwidth or &#124;Unmetered Bandwidth | Optional. The billing ID **MUST** use the same unit as your overage billing setting in WHMCS (default is GB) |
