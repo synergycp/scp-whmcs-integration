@@ -143,7 +143,7 @@ class WhmcsConfig
                 'Type' => 'yesno',
             ];
         case static::SWITCH_ACCESS:
-            return $config['Switch Access'] = [
+            return $config['Switch Port Power Access'] = [
                 'Type' => 'yesno',
             ];
         case static::DELETE_ACTION:
