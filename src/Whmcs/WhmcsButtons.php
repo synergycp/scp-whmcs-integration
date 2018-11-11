@@ -326,9 +326,13 @@ class WhmcsButtons
      */
     public function createClient()
     {
-        $this->clients->getOrCreate();
+        try {
+            $this->clients->getOrCreate();
 
-        return 'success';
+            return 'success';
+        } catch (\Exception $exc) {
+            return $exc->getMessage();
+        }
     }
 
     /**
