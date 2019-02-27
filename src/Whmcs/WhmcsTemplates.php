@@ -59,7 +59,11 @@ class WhmcsTemplates
         }
 
         $server = $server->full();
-        $billingId = $this->server->currentBillingId();
+
+        // $billingId = $this->server->currentBillingId();
+        echo $billingId = $this->server->currentBillingId();
+        die();
+        
         $urlAction = sprintf(
             'clientarea.php?action=productdetails&id=%d&modop=custom&a=',
             $billingId
