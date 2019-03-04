@@ -38,7 +38,7 @@ class WhmcsConfig
     const TICKET_DEPT_DESC = 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.';
     const DELETE_ACTION_DESC = 'When a product is terminated, this action will occur.';
     const PRE_INSTALL_DESC = 'Billing ID of an OS Reload that will be run before each install, e.g. format-quick. Multiple can be separated by a comma.';
-    const ADDON_BILLING_DESC = 'Billing ID of an Addon . Multiple can be separated by a comma.';
+    const ADDON_BILLING_DESC = 'Billing ID of an Addon. Multiple can be separated by a comma.';
 
     const DELETE_ACTION_WIPE = 0;
     const DELETE_ACTION_TICKET = 1;
@@ -166,22 +166,22 @@ class WhmcsConfig
                 'Size' => '50',
                 'Description' => self::PRE_INSTALL_DESC,
             ];
-        case static::RAM_BILLING_ID:
-            return $config['RAM Billing ID'] = [
+        case static::MEM_BILLING_ID:
+            return $config['MEM Billing ID'] = [
                 'Type' => 'text',
                 'Size' => '50',
                 'Description' => '',
             ];
         case static::DISK_BILLING_ID:
-            return $config['DISK Billing ID'] = [
+            return $config['Disk Billing ID'] = [
                 'Type' => 'text',
                 'Size' => '50',
                 'Description' => '',
             ];
         case static::ADDON_BILLING_ID:
-            return $config['ADDON Billing ID\'s'] = [
+            return $config['Addon Billing ID\'s'] = [
                 'Type' => 'text',
-                'Size' => '50',
+                'Size' => '100',
                 'Description' => self::PRE_INSTALL_DESC,
             ];
         }
