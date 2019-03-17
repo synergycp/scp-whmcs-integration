@@ -190,7 +190,7 @@ class ServerProvisionerTest extends TestCase
                     'cpu_billing' => $cpu,
                     'disks_billing' => [],
                     'addons_billing' => [],
-                    'ip_group_billing' => $loc,
+                    'ip_group_billing' => [$loc],
                 ], [
                     'ips_billing' => $ips,
                     'pxe_profile_billing' => $preInstall,
@@ -378,7 +378,7 @@ $bandwidthLabel: $bandwidthName
             ->andReturn($entityQuery);
         $entityQuery
             ->shouldReceive('where')
-            ->with('group', ['billing' => $config['Datacenter Location']])
+            ->with('group', ['billing' => (array)$config['Datacenter Location']])
             ->andReturnSelf();
         $entityQuery
             ->shouldReceive('where')
