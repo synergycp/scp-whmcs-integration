@@ -78,7 +78,7 @@ class UsageUpdater
     {
         // Get bandwidth from SynergyCP
         $fail = false;
-        Server::query()->where('integration_id', 'me')->chunk(100, function ($servers) use (&$fail) {
+        $this->servers->query()->where('integration_id', 'me')->chunk(100, function ($servers) use (&$fail) {
             $servers->map(function (Server $server) use (&$fail) {
                 try {
                     $this->database

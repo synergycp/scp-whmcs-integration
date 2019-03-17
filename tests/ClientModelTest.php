@@ -6,7 +6,17 @@ use Scp\Api\ApiResponse;
 
 class ClientModelTest extends TestCase
 {
-    public function setUp()
+    /**
+     * @var MockInterface
+     */
+    private $api;
+
+    /**
+     * @var MockInterface
+     */
+    private $response;
+
+    public function setUp(): void
     {
         $this->api = Mockery::mock(Api::class);
         $this->response = Mockery::mock(ApiResponse::class);
@@ -14,6 +24,8 @@ class ClientModelTest extends TestCase
 
     /**
      * @param array $info
+     *
+     * @param array $expectedInfo
      *
      * @dataProvider dataCreate
      */

@@ -2,10 +2,12 @@
 
 use Scp\Api\ApiQuery;
 use Scp\Api\Pagination\ApiPaginator;
+use Scp\Entity\EntityRepository;
 use Scp\Server\Install;
 use Scp\Support\Collection;
 use Scp\Whmcs\Database\Database;
 use Scp\Whmcs\Server\Provision\ServerProvisioner;
+use Scp\Whmcs\Server\ServerFieldsService;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Ticket\TicketManager;
 use Scp\Whmcs\Client\ClientService;
@@ -18,7 +20,12 @@ use Illuminate\Database\Query\Builder;
 
 class ServerProvisionerTest extends TestCase
 {
-    public function setUp()
+    /**
+     * This is the SynergyCP API key.
+     */
+    const ACCESS_HASH = 'test';
+
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -31,13 +38,18 @@ class ServerProvisionerTest extends TestCase
             $this->config = Mockery::mock(WhmcsConfig::class),
             $this->clients = Mockery::mock(ClientService::class),
             $this->tickets = Mockery::mock(TicketManager::class),
+            $this->entities = Mockery::mock(EntityRepository::class),
+            $this->fields = Mockery::mock(ServerFieldsService::class),
             $this->orig = Mockery::mock(OriginalServerProvisioner::class)
         );
     }
 
     /**
-     * @param array $input
+     * @param array $config
+     * @param array $params
+     * @param array $serverFilter
      * @param array $serverInfo
+     * @param array $extraInstalls
      *
      * @dataProvider dataProvision
      */
@@ -88,17 +100,19 @@ class ServerProvisionerTest extends TestCase
             ])
             ->andReturn(true)
             ;
-        $entities = [];
 
         $this->log
             ->shouldReceive('activity')
             ;
 
-        $this->server
-            ->shouldReceive('getAttribute')
-            ->with('entities')
-            ->andReturn($entities)
-            ;
+//        $entities = [];
+//        $this->server
+//            ->shouldReceive('getAttribute')
+//            ->with('entities')
+//            ->andReturn($entities)
+//            ;
+
+        $this->mockEntityQuery($config, true);
 
         $installQuery = Mockery::mock(ApiQuery::class);
         $installs = Mockery::mock(ApiPaginator::class);
@@ -132,7 +146,13 @@ class ServerProvisionerTest extends TestCase
                 ->andReturn($postData['parent']['id']);
         }
 
+
+        $this->fields
+            ->shouldReceive('fill')
+            ->with($params['serviceid'], $this->server);
+
         $this->provision->create();
+        $this->assertEquals(true, true);
     }
 
     public function dataProvision()
@@ -164,6 +184,7 @@ class ServerProvisionerTest extends TestCase
                     'serviceid' => $billingId = '1',
                     'domain' => $nickname = '_domain_',
                     'password' => $password = '_password_',
+                    'serveraccesshash' => static::ACCESS_HASH
                 ], [
                     'mem_billing' => $ram,
                     'cpu_billing' => $cpu,
@@ -176,7 +197,9 @@ class ServerProvisionerTest extends TestCase
                     'port_speed_billing' => $portSpeed,
                     'nickname' => $nickname,
                     'password' => $password,
-                    'ddos' => [],
+                    'server' => [
+                        'fields' => [],
+                    ],
                     'billing' => [
                         'id' => $billingId,
                         'max_bandwidth' => $maxBandwidth,
@@ -192,14 +215,21 @@ class ServerProvisionerTest extends TestCase
                     'parent' => [
                         'id' => 1,
                     ],
+                    'disk' => [
+                        'raid' => null,
+                    ],
                 ]],
             ],
         ];
     }
 
     /**
-     * @param array $input
-     * @param array $whmcsConfig
+     * @param string $productName
+     * @param array  $config
+     * @param array  $params
+     * @param array  $whmcsConfig
+     *
+     * @param array $ticketInfo
      *
      * @dataProvider dataProvisionTicket
      */
@@ -211,36 +241,37 @@ class ServerProvisionerTest extends TestCase
         $this->whmcs->shouldReceive('configOptions')->andReturn($whmcsConfig);
         $this->tickets->shouldReceive('createAndLogErrors')->with($ticketInfo);
         $this->clients->shouldReceive('getOrCreate')->andReturn($this->client);
-        $this->query = Mockery::mock(Builder::class);
+        $this->mockEntityQuery($config, true);
+        $query = Mockery::mock(Builder::class);
         $this->database->shouldReceive('table')
             ->once()
             ->with('tblproducts')
-            ->andReturn($this->query)
+            ->andReturn($query)
             ;
-        $this->query->shouldReceive('select')
+        $query->shouldReceive('select')
             ->once()
             ->with('name')
-            ->andReturn($this->query)
+            ->andReturn($query)
             ;
-        $this->query->shouldReceive('where')
+        $query->shouldReceive('where')
             ->once()
             ->with('id', $params['pid'])
-            ->andReturn($this->query)
+            ->andReturn($query)
             ;
-        $this->query->shouldReceive('limit')
+        $query->shouldReceive('limit')
             ->once()
             ->with(1)
-            ->andReturn($this->query)
+            ->andReturn($query)
             ;
         $result = new stdClass;
         $result->name = $productName;
-        $this->query->shouldReceive('first')
+        $query->shouldReceive('first')
             ->once()
-            ->with()
             ->andReturn($result)
             ;
 
         $this->provision->create();
+        $this->assertEquals(true, true);
     }
 
     public function dataProvisionTicket()
@@ -273,6 +304,7 @@ class ServerProvisionerTest extends TestCase
                     'domain' => $domain = '_domain_',
                     'password' => $password = '_password_',
                     'pid' => 1,
+                    'serveraccesshash' => self::ACCESS_HASH,
                 ], [
                     $osLabel => [
                         $osChoice => $osName = 'Windows 2008',
@@ -316,8 +348,16 @@ $bandwidthLabel: $bandwidthName
 
     private function setupConfig(array $config, array $params)
     {
-        $this->config->shouldReceive('options')
+        $this->config
+            ->shouldReceive('options')
             ->andReturn($config);
+
+        foreach ($config as $key => $value) {
+            $this->config
+                ->shouldReceive('getOption')
+                ->with($key)
+                ->andReturn($value);
+        }
         $this->config->shouldReceive('get')
             ->andReturnUsing(function ($key) use (&$params) {
                 return $params[$key];
@@ -328,5 +368,28 @@ $bandwidthLabel: $bandwidthName
             });
         $this->whmcs->shouldReceive('getParams')
             ->andReturn($params);
+    }
+
+    private function mockEntityQuery(array $config, $return)
+    {
+        $entityQuery = Mockery::mock(ApiQuery::class);
+        $this->entities
+            ->shouldReceive('query')
+            ->andReturn($entityQuery);
+        $entityQuery
+            ->shouldReceive('where')
+            ->with('group', ['billing' => $config['Datacenter Location']])
+            ->andReturnSelf();
+        $entityQuery
+            ->shouldReceive('where')
+            ->with('billing_id', $config['IPv4 Addresses'])
+            ->andReturnSelf();
+        $entityQuery
+            ->shouldReceive('where')
+            ->with('server', 'none')
+            ->andReturnSelf();
+        $entityQuery
+            ->shouldReceive('first')
+            ->andReturn($return);
     }
 }
