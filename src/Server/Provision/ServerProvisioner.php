@@ -187,7 +187,7 @@ class ServerProvisioner
         return $this->entities
             ->query()
             ->where('group', [
-                'billing' => $this->ipGroupChoice(),
+                'billing' => $this->ipGroupChoices(),
             ])
             ->where('billing_id', $this->getIps())
             ->where('server', 'none')
@@ -222,11 +222,11 @@ class ServerProvisioner
     }
 
     /**
-     * @return string
+     * @return array
      */
-    private function ipGroupChoice()
+    private function ipGroupChoices()
     {
-        return $this->config->getOption('Datacenter Location');
+        return explode($this->sep, $this->config->getOption('Datacenter Location'));
     }
 
     /**
@@ -250,7 +250,7 @@ class ServerProvisioner
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
             'disks_billing' =>  $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/'),
             'addons_billing' => $this->addons($choices),
-            'ip_group_billing' => $this->ipGroupChoice(),
+            'ip_group_billing' => $this->ipGroupChoices(),
         ];
     }
 
