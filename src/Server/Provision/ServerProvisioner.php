@@ -2,6 +2,7 @@
 
 namespace Scp\Whmcs\Server\Provision;
 
+use Scp\Entity\EntityRepository;
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
 use Scp\Whmcs\LogFactory;
 use Scp\Whmcs\Database\Database;
@@ -65,6 +66,11 @@ class ServerProvisioner
     protected $fields;
 
     /**
+     * @var EntityRepository
+     */
+    protected $entities;
+
+    /**
      * @var int|null
      */
     private $softRaid;
@@ -76,6 +82,7 @@ class ServerProvisioner
      * @param WhmcsConfig               $config
      * @param ClientService             $client
      * @param TicketManager             $tickets
+     * @param EntityRepository          $entities
      * @param ServerFieldsService       $fields
      * @param OriginalServerProvisioner $provision
      */
@@ -86,6 +93,7 @@ class ServerProvisioner
         WhmcsConfig $config,
         ClientService $client,
         TicketManager $tickets,
+        EntityRepository $entities,
         ServerFieldsService $fields,
         OriginalServerProvisioner $provision
     ) {
@@ -95,6 +103,7 @@ class ServerProvisioner
         $this->client = $client;
         $this->fields = $fields;
         $this->tickets = $tickets;
+        $this->entities = $entities;
         $this->database = $database;
         $this->provision = $provision;
     }
@@ -175,7 +184,8 @@ class ServerProvisioner
      */
     public function getEntities()
     {
-        return Entity::query()
+        return $this->entities
+            ->query()
             ->where('group', [
                 'billing' => $this->ipGroupChoice(),
             ])

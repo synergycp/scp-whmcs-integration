@@ -1,12 +1,23 @@
 <?php
 
+use Mockery\MockInterface;
 use Scp\Api\Api;
 use Scp\Api\ApiResponse;
 use Scp\Client\ClientRepository;
 
 class ApiQueryTest extends TestCase
 {
-    public function setUp()
+    /**
+     * @var MockInterface
+     */
+    private $api;
+
+    /**
+     * @var MockInterface
+     */
+    private $response;
+
+    public function setUp(): void
     {
         $this->api = Mockery::mock(Api::class);
         $this->response = Mockery::mock(ApiResponse::class);
@@ -43,7 +54,7 @@ class ApiQueryTest extends TestCase
             $query->where($key, $value);
         }
 
-        $query->get($perPage)->items();
+        $this->assertEmpty($query->get($perPage)->items());
     }
 
     public function dataFilters()
