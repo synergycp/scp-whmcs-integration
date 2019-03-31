@@ -165,7 +165,7 @@ class ServerProvisionerTest extends TestCase
                     'Operating System' => $osChoice = 'windows-2008',
                     'Memory' => $ram = 'ram',
                     'Network Port Speed' => $portSpeed = 'speed-1000',
-                    'Datacenter Location' => $loc = 'LOC-LA',
+                    'Datacenter Location' => $loc = 'LOC-LA, LOC-CHI',
                     'IPv4 Addresses' => $ips = 'ip-28',
                     'Bandwidth' => $maxBandwidth = '10TB',
                 ], [
@@ -190,7 +190,7 @@ class ServerProvisionerTest extends TestCase
                     'cpu_billing' => $cpu,
                     'disks_billing' => [],
                     'addons_billing' => [],
-                    'ip_group_billing' => [$loc],
+                    'ip_group_billing' => $loc,
                 ], [
                     'ips_billing' => $ips,
                     'pxe_profile_billing' => $preInstall,
@@ -284,7 +284,7 @@ class ServerProvisionerTest extends TestCase
                     $osLabel = 'Operating System' => $osChoice = 'windows-2008',
                     $memLabel = 'Memory' => $ram = 'ram',
                     $portLabel = 'Network Port Speed' => $portSpeed = 'speed-1000',
-                    $locLabel = 'Datacenter Location' => $loc = 'LOC-LA',
+                    $locLabel = 'Datacenter Location' => $loc = 'LOC-LA, LOC-CHI',
                     $ipLabel = 'IPv4 Addresses' => $ips = 'ip-28',
                     $bandwidthLabel = 'Bandwidth' => $maxBandwidth = '10TB',
                 ], [
@@ -378,7 +378,7 @@ $bandwidthLabel: $bandwidthName
             ->andReturn($entityQuery);
         $entityQuery
             ->shouldReceive('where')
-            ->with('group', ['billing' => (array)$config['Datacenter Location']])
+            ->with('group', ['billing' => ['LOC-LA', 'LOC-CHI']])
             ->andReturnSelf();
         $entityQuery
             ->shouldReceive('where')
