@@ -1,13 +1,7 @@
 <?php
 
-use Scp\Whmcs\App;
-
 class AppTest extends TestCase
 {
-    public function setUp()
-    {
-    }
-
     public function testGet()
     {
         $app = $this->app();
