@@ -236,11 +236,15 @@ class ServerProvisioner
         $choices = $this->config->options();
         $memory = $this->config->getOption('Memory');
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
+
+        $configDiskBillingIds = explode(',', $this->config->option(WhmcsConfig::DISK_BILLING_IDS));
+        $configAddonBillingIds = explode(',', $this->config->option(WhmcsConfig::ADDON_BILLING_IDS));
+
         return [
-            'mem_billing' => ($memory) ? $memory : $this->config->option(WhmcsConfig::MEM_BILLING_ID),
+            'mem_billing' => $this->config->option(WhmcsConfig::MEM_BILLING_ID) ?: $memory,
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
-            'disks_billing' => ($disks) ? $disks : $this->config->option(WhmcsConfig::DISK_BILLING_IDS),
-            'addons_billing' => $this->addons($choices),
+            'disks_billing' => $configDiskBillingIds ?: $disks,
+            'addons_billing' => $configAddonBillingIds ?: $this->addons($choices),
             'ip_group_billing' => $this->ipGroupChoice(),
         ];
     }
