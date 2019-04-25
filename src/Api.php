@@ -33,10 +33,8 @@ class Api
         $parsed = parse_url($hostname);
         $path = Arr::get($parsed, 'path', '');
         $host = Arr::get($parsed, 'host', '');
-
         $default_scheme = Arr::get($params, 'serversecure', false) ? 'https' : 'http';
         $scheme = Arr::get($parsed, 'scheme', $default_scheme);
-        // $scheme = Arr::get($parsed, 'scheme', 'http');
 
         if ($path) {
             $path = trim($path, '/') . '/';
