@@ -238,15 +238,15 @@ class ServerProvisioner
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
 
         $memBillingId = $this->config->option(WhmcsConfig::MEM_BILLING_ID);
-        $diskBillingIds = $this->config->option(WhmcsConfig::DISK_BILLING_IDS);
-        $addonBillingIds = $this->config->option(WhmcsConfig::ADDON_BILLING_IDS);
+        $configDiskBillingIds = $this->config->option(WhmcsConfig::DISK_BILLING_IDS);
+        $configAddonBillingIds = $this->config->option(WhmcsConfig::ADDON_BILLING_IDS);
 
         if ($diskBillingIds !== '') {
-            $configDiskBillingIds = explode(',', $diskBillingIds);
+            // $configDiskBillingIds = explode(',', $diskBillingIds);
         }
 
         if ($addonBillingIds !== '') {
-            $configAddonBillingIds = explode(',', $addonBillingIds);
+            // $configAddonBillingIds = explode(',', $addonBillingIds);
         }
 
         if ($memBillingId === '') {
@@ -254,12 +254,20 @@ class ServerProvisioner
         }
 
         return [
-            'mem_billing' => $memBillingId ?: $memory,
+            'mem_billing' => $memBillingId,
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
-            'disks_billing' => $configDiskBillingIds ?: $disks,
-            'addons_billing' => $configAddonBillingIds ?: $this->addons($choices),
+            'disks_billing' => $configDiskBillingIds,
+            'addons_billing' => $configAddonBillingIds,
             'ip_group_billing' => $this->ipGroupChoice(),
         ];
+
+        // return [
+        //     'mem_billing' => $memBillingId ?: $memory,
+        //     'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
+        //     'disks_billing' => $configDiskBillingIds ?: $disks,
+        //     'addons_billing' => $configAddonBillingIds ?: $this->addons($choices),
+        //     'ip_group_billing' => $this->ipGroupChoice(),
+        // ];
     }
 
     /**

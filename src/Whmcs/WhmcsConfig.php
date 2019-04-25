@@ -135,13 +135,13 @@ class WhmcsConfig
                 'Description' => self::MEM_BILLING_DESC,
             ];
         case static::DISK_BILLING_IDS:
-            return $config['Disk Billing ID\'s'] = [
+            return $config['Disk Billing IDs'] = [
                 'Type' => 'text',
                 'Size' => '50',
                 'Description' => self::DISK_BILLING_DESC,
             ];
         case static::ADDON_BILLING_IDS:
-            return $config['Addon Billing ID\'s'] = [
+            return $config['Addon Billing IDs'] = [
                 'Type' => 'text',
                 'Size' => '100',
                 'Description' => self::ADDON_BILLING_DESC,
