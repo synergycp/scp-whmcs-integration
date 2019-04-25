@@ -239,7 +239,7 @@ class ServerProvisioner
         return [
             'mem_billing' => ($memory) ? $memory : $this->config->option(WhmcsConfig::RAM_BILLING_ID),
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
-            'disks_billing' => ($disks) ? $disks : $this->config->option(WhmcsConfig::DISK_BILLING_ID),
+            'disks_billing' => ($disks) ? $disks : $this->config->option(WhmcsConfig::DISK_BILLING_IDS),
             'addons_billing' => $this->addons($choices),
             'ip_group_billing' => $this->ipGroupChoice(),
         ];

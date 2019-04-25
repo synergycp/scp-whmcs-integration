@@ -23,22 +23,24 @@ class WhmcsConfig
     const DELETE_ACTION = 7;
     const PRE_INSTALL = 8;
     const RAM_BILLING_ID = 9;
-    const DISK_BILLING_ID = 10;
-    const ADDON_BILLING_ID = 11;
+    const DISK_BILLING_IDS = 10;
+    const ADDON_BILLING_IDS = 11;
 
     /**
      * The 1-based index of the last Config Option.
      *
      * @var int
      */
-    protected $countOptions = self::ADDON_BILLING_ID;
+    protected $countOptions = self::ADDON_BILLING_IDS;
     // protected $countOptions = self::PRE_INSTALL;
 
     const API_USER_DESC = 'This must be an administrator user with API access enabled.';
     const TICKET_DEPT_DESC = 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.';
     const DELETE_ACTION_DESC = 'When a product is terminated, this action will occur.';
     const PRE_INSTALL_DESC = 'Billing ID of an OS Reload that will be run before each install, e.g. format-quick. Multiple can be separated by a comma.';
-    const ADDON_BILLING_DESC = 'Billing ID of an Addon. Multiple can be separated by a comma.';
+    const RAM_BILLING_DESC = 'Billing ID of the RAM.';
+    const DISK_BILLING_DESC = 'Billing ID of the Hard Disks. Multiple can be separated by commas.';
+    const ADDON_BILLING_DESC = 'Billing ID of the Addons. Multiple can be separated by commas.';
 
     const DELETE_ACTION_WIPE = 0;
     const DELETE_ACTION_TICKET = 1;
@@ -166,23 +168,23 @@ class WhmcsConfig
                 'Size' => '50',
                 'Description' => self::PRE_INSTALL_DESC,
             ];
-        case static::MEM_BILLING_ID:
+        case static::RAM_BILLING_ID:
             return $config['MEM Billing ID'] = [
                 'Type' => 'text',
                 'Size' => '50',
-                'Description' => '',
+                'Description' => self::RAM_BILLING_DESC,
             ];
-        case static::DISK_BILLING_ID:
-            return $config['Disk Billing ID'] = [
+        case static::DISK_BILLING_IDS:
+            return $config['Disk Billing ID\'s'] = [
                 'Type' => 'text',
                 'Size' => '50',
-                'Description' => '',
+                'Description' => self::DISK_BILLING_DESC,
             ];
-        case static::ADDON_BILLING_ID:
+        case static::ADDON_BILLING_IDS:
             return $config['Addon Billing ID\'s'] = [
                 'Type' => 'text',
                 'Size' => '100',
-                'Description' => self::PRE_INSTALL_DESC,
+                'Description' => self::ADDON_BILLING_DESC,
             ];
         }
     }

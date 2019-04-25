@@ -4,7 +4,7 @@ if (!defined('WHMCS')) {
     die('This file cannot be accessed directly.');
 }
 
-ini_set('display_errors', 'Off');
+ini_set('display_errors', 'On');
 ini_set('error_reporting', E_ALL & ~E_NOTICE & ~E_WARNING);
 
 require __DIR__.'/bootstrap/autoload.php';
