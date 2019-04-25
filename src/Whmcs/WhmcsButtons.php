@@ -328,7 +328,7 @@ class WhmcsButtons
     {
         try {
             $this->clients->getOrCreate();
-            
+
             return 'success';
         } catch (\Exception $exc) {
             return $exc->getMessage();

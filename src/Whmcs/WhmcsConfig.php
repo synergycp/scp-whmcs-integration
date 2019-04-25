@@ -33,9 +33,9 @@ class WhmcsConfig
      */
     protected $countOptions = self::PRE_INSTALL;
 
-    const MEM_BILLING_DESC = 'Billing ID of the RAM.';
-    const DISK_BILLING_DESC = 'Billing ID of the Hard Disks. Multiple can be separated by commas.';
-    const ADDON_BILLING_DESC = 'Billing ID of the Addons. Multiple can be separated by commas.';
+    const MEM_BILLING_DESC = 'Billing ID of the RAM. Setting this will override user-selected RAM options.';
+    const DISK_BILLING_DESC = 'Billing ID of the Hard Disks. Multiple can be separated by commas. Setting this will override user-selected disk options.';
+    const ADDON_BILLING_DESC = 'Billing ID of the Addons. Multiple can be separated by commas. Setting this will override user-selected addon options.';
     const API_USER_DESC = 'This must be an administrator user with API access enabled.';
     const TICKET_DEPT_DESC = 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.';
     const DELETE_ACTION_DESC = 'When a product is terminated, this action will occur.';
