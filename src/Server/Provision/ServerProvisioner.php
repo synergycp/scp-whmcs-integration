@@ -358,7 +358,7 @@ class ServerProvisioner
             $params['password']
         );
 
-        /*So I'm fairly certain I have the actual provisioning code working for Intergrid, but the print function uses the original whmcs->configOptions() array so its using the old values even though in the backend it knows to use the new values.
+        /*So I'm fairly certain I have the actual provisioning code working for Fallback-custom-fields, but the print function uses the original whmcs->configOptions() array so its using the old values even though in the backend it knows to use the new values.
         can I just add all the WhmcsConfig::MEM_BILLING_IDs and stuff to an array, and then do a for-each on that array and print them, and if it prints
         them then I will remove that value from the $configOpts array so it wont print the old one. I could also just modify that array but I know you don't like that so I'm not positive what to do.
         */
