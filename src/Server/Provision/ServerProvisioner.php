@@ -241,8 +241,13 @@ class ServerProvisioner
         $configDiskBillingIds = $this->config->option(WhmcsConfig::DISK_BILLING_IDS);
         $configAddonBillingIds = $this->config->option(WhmcsConfig::ADDON_BILLING_IDS);
 
-        // $configDiskBillingIds = array_map('trim', array_filter(explode(',', $this->config->option(WhmcsConfig::DISK_BILLING_IDS))));
-        // $configAddonBillingIds = array_map('trim', array_filter(explode(',', $this->config->option(WhmcsConfig::ADDON_BILLING_IDS))));
+        // $configDiskBillingIds = explode(',', $this->config->option(WhmcsConfig::DISK_BILLING_IDS));
+        // $configAddonBillingIds = explode(',', $this->config->option(WhmcsConfig::ADDON_BILLING_IDS));
+
+        #TODO trim whitespace around $configDiskBillingIds and $configAddonBillingIds
+
+        $configDiskBillingIds = array_map('trim', array_filter(explode(',', $this->config->option(WhmcsConfig::DISK_BILLING_IDS))));
+        $configAddonBillingIds = array_map('trim', array_filter(explode(',', $this->config->option(WhmcsConfig::ADDON_BILLING_IDS))));
 
         if ($memBillingId === '') {
             $memBillingId = null;
@@ -358,36 +363,28 @@ class ServerProvisioner
             $params['password']
         );
 
-        /*So I'm fairly certain I have the actual provisioning code working for Fallback-custom-fields, but the print function uses the original whmcs->configOptions() array so its using the old values even though in the backend it knows to use the new values.
-        can I just add all the WhmcsConfig::MEM_BILLING_IDs and stuff to an array, and then do a for-each on that array and print them, and if it prints
-        them then I will remove that value from the $configOpts array so it wont print the old one. I could also just modify that array but I know you don't like that so I'm not positive what to do.
-        */
+        array_filter($presetConfigOptions = [
+            'Memory' => $this->config->option(WhmcsConfig::MEM_BILLING_ID),
+            'Disks' => $this->config->option(WhmcsConfig::DISK_BILLING_IDS),
+            'Addons' => $this->config->option(WhmcsConfig::ADDON_BILLING_IDS),
+        ]);
 
-        // array_filter($presetConfigOptions = [
-        //     'Memory' => $this->config->option(WhmcsConfig::MEM_BILLING_ID),
-        //     'Disks' => $this->config->option(WhmcsConfig::DISK_BILLING_IDS),
-        //     //TODO foreach and print them as (Drive Bay 1: XXX) in the DiskBillingIds array and the $configAddonBillingIds Array.
-        //     'Addons' => $this->config->option(WhmcsConfig::ADDON_BILLING_IDS),
-        // ]);
-
-        // foreach ($presetConfigOptions as $optionName => $billingVal) {
-        //     if ($presetConfigOptions[$optionName]) {
-        //         $message .= sprintf(
-        //             "%s: %s\n",
-        //             $optionName,
-        //             $presetConfigOptions[$optionName]
-        //         );
-        //     }
-        // }
-
-        $presetConfigOptions = $this->getPresetConfigOptions();
+        foreach ($presetConfigOptions as $optionName => $billingVal) {
+            if ($presetConfigOptions[$optionName]) {
+                $message .= sprintf(
+                    "%s: %s\n",
+                    $optionName,
+                    $presetConfigOptions[$optionName]
+                );
+            }
+        }
 
         $configOpts = $this->whmcs->configOptions();
         foreach ($params['configoptions'] as $optName => $billingVal) {
             $message .= sprintf(
                 "%s: %s\n",
                 $optName,
-                $presetConfigOptions[$optName] ?: $configOpts[$optName][$billingVal]
+                $configOpts[$optName][$billingVal]
             );
         }
 
@@ -398,51 +395,51 @@ class ServerProvisioner
         ]);
     }
 
-    /**
-     *
-     * @return array
-     */
-    private function getPresetConfigOptions()
-    {
-        $configDiskBillingIds = $this->parseConfigOptions($this->config->option(WhmcsConfig::DISK_BILLING_IDS));
-        $configAddonBillingIds = $this->parseConfigOptions($this->config->option(WhmcsConfig::ADDON_BILLING_IDS));
-        $diskIDs = [];
-        $addonIDs = [];
+    // /**
+    //  *
+    //  * @return array
+    //  */
+    // private function getPresetConfigOptions()
+    // {
+    //     $configDiskBillingIds = $this->parseConfigOptions($this->config->option(WhmcsConfig::DISK_BILLING_IDS));
+    //     $configAddonBillingIds = $this->parseConfigOptions($this->config->option(WhmcsConfig::ADDON_BILLING_IDS));
+    //     $diskIDs = [];
+    //     $addonIDs = [];
+    //
+    //     foreach($configDiskBillingIds as $key => $disk)
+    //     {
+    //         $newKey = 'Drive Bay ' . $key;
+    //         $diskIDs[$newKey] = $disk;
+    //     }
+    //
+    //     foreach($configAddonBillingIds as $key => $addon)
+    //     {
+    //         $newKey = 'Addon ' . $key;
+    //         $addonIDs[$newKey] = $addon;
+    //     }
+    //
+    //
+    //     $presetConfigOptions = [
+    //         'Memory' => $this->config->option(WhmcsConfig::MEM_BILLING_ID),
+    //         // 'Drive Bay 1' => $this->config->option(WhmcsConfig::DISK_BILLING_IDS),
+    //         // 'Addons' => $this->config->option(WhmcsConfig::ADDON_BILLING_IDS),
+    //     ];
+    //
+    //     return $presetConfigOptions + $diskIDs + $addonIDs;
+    // }
 
-        foreach($configDiskBillingIds as $key => $disk)
-        {
-            $newKey = 'Drive Bay ' . $key;
-            $diskIDs[$newKey] = $disk;
-        }
-
-        foreach($configAddonBillingIds as $key => $addon)
-        {
-            $newKey = 'Addon ' . $key;
-            $addonIDs[$newKey] = $addon;
-        }
-
-
-        $presetConfigOptions = [
-            'Memory' => $this->config->option(WhmcsConfig::MEM_BILLING_ID),
-            // 'Drive Bay 1' => $this->config->option(WhmcsConfig::DISK_BILLING_IDS),
-            // 'Addons' => $this->config->option(WhmcsConfig::ADDON_BILLING_IDS),
-        ];
-
-        return $presetConfigOptions + $diskIDs + $addonIDs;
-    }
-
-    /**
-     * @param string $configOption
-     *
-     * @return array
-     */
-    private function parseConfigOptions(string $configOption)
-    {
-        return array_map('trim',
-            array_filter(
-                explode(',', $configOption)
-            ));
-    }
+    // /**
+    //  * @param string $configOption
+    //  *
+    //  * @return array
+    //  */
+    // private function parseConfigOptions(string $configOption)
+    // {
+    //     return array_map('trim',
+    //         array_filter(
+    //             explode(',', $configOption)
+    //         ));
+    // }
 
     /**
      * @param array $params
