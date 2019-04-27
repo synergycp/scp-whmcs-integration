@@ -243,7 +243,7 @@ class ServerProvisioner
         $preconfiguredAddons = $this->addons($this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS, 'Add On', false, false));
 
         return [
-            'mem_billing' => $preconfiguredMemory[0] ?: $memory,
+            'mem_billing' => $preconfiguredMemory ?: $memory,
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
             'disks_billing' => $preconfiguredDisks ?: $disks,
             'addons_billing' => $preconfiguredAddons ?: $addons,
