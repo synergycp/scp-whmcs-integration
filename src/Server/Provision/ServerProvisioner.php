@@ -237,30 +237,42 @@ class ServerProvisioner
         $memory = $this->config->getOption('Memory');
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
 
-        $memBillingId = $this->config->option(WhmcsConfig::MEM_BILLING_ID);
-        $configDiskBillingIds = $this->config->option(WhmcsConfig::DISK_BILLING_IDS);
-        $configAddonBillingIds = $this->config->option(WhmcsConfig::ADDON_BILLING_IDS);
+        // $preconfiguredDisks = $this->getConfigValue(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay');
+        // $preconfiguredAddons = $this->getConfigValue(WhmcsConfig::ADDON_BILLING_IDS, 'Add On');
 
-        // $configDiskBillingIds = explode(',', $this->config->option(WhmcsConfig::DISK_BILLING_IDS));
-        // $configAddonBillingIds = explode(',', $this->config->option(WhmcsConfig::ADDON_BILLING_IDS));
+        // $memBillingId =  ?: null;
+        // $preconfiguredDisks = $this->getConfigDiskOptions();
+        // $preconfiguredAddons = getConfigAddonOptions($this->config->option(WhmcsConfig::ADDON_BILLING_IDS));
 
-        #TODO trim whitespace around $configDiskBillingIds and $configAddonBillingIds
+        // if ($parsedDisks) {
+        //     $diskBillingIds = $this->multiChoice($parsedDisks, '/Drive Bay ([0-9]+)(.*)/');
+        // }
 
-        $configDiskBillingIds = array_map('trim', array_filter(explode(',', $this->config->option(WhmcsConfig::DISK_BILLING_IDS))));
-        $configAddonBillingIds = array_map('trim', array_filter(explode(',', $this->config->option(WhmcsConfig::ADDON_BILLING_IDS))));
+        // if ($parsedAddons) {
+        //
+        // }
 
-        if ($memBillingId === '') {
-            $memBillingId = null;
-        }
+
+
+        // print_r($disks);
+
+        // echo '<pre>'; var_dump($disks); echo '</pre>';
 
         return [
-            'mem_billing' => $memBillingId ?: $memory,
+            'mem_billing' => $this->config->option(WhmcsConfig::MEM_BILLING_ID) ?: $memory,
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
-            'disks_billing' => $configDiskBillingIds ?: $disks,
-            'addons_billing' => $configAddonBillingIds ?: $this->addons($choices),
+            'disks_billing' => $preconfiguredDisks ?: $disks,
+            'addons_billing' => $preconfiguredAddons ?: $this->addons($choices),
             'ip_group_billing' => $this->ipGroupChoice(),
         ];
     }
+
+    // function console_log($data)
+    // {
+    //     echo '<script>';
+    //     echo 'console.log('. json_encode( $data ) .')';
+    //     echo '</script>';
+    // }
 
     /**
      * @param string $osChoice
@@ -365,8 +377,8 @@ class ServerProvisioner
 
         array_filter($presetConfigOptions = [
             'Memory' => $this->config->option(WhmcsConfig::MEM_BILLING_ID),
-            'Disks' => $this->config->option(WhmcsConfig::DISK_BILLING_IDS),
-            'Addons' => $this->config->option(WhmcsConfig::ADDON_BILLING_IDS),
+            'Disk(s)' => $this->getConfigDiskOptions(),
+            'Addon(s)' => $this->getConfigAddonOptions(),
         ]);
 
         foreach ($presetConfigOptions as $optionName => $billingVal) {
@@ -429,16 +441,29 @@ class ServerProvisioner
     // }
 
     // /**
-    //  * @param string $configOption
+    //  * @param string $configID
+    //  * @param string $newKey
     //  *
-    //  * @return array
+    //  * @return array|null
     //  */
-    // private function parseConfigOptions(string $configOption)
+    // private function getConfigValue(string $configID, string $newKey)
     // {
-    //     return array_map('trim',
-    //         array_filter(
-    //             explode(',', $configOption)
-    //         ));
+    //     // $result = [];
+    //     $configValue = $this->config->option($configID) ?: null;
+    //
+    //     if (!$configValue) {
+    //       return null;
+    //     }
+    //
+    //     // $configValues = array_map('trim', explode(',', $configValue));
+    //     //
+    //     // foreach($configValues as $index => $configValue) {
+    //     //     $key = $newKey . ' ' . ($index + 1);
+    //     //     $result[$key] = $configValue;
+    //     // }
+    //     //
+    //     // return $result;
+    //     return null;
     // }
 
     /**
