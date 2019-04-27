@@ -236,43 +236,20 @@ class ServerProvisioner
         $choices = $this->config->options();
         $memory = $this->config->getOption('Memory');
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
+        $addons = $this->addons($this->multiChoice($choices, '/Add On ([0-9]+)/'));
 
-        // $preconfiguredDisks = $this->getConfigValue(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay');
-        // $preconfiguredAddons = $this->getConfigValue(WhmcsConfig::ADDON_BILLING_IDS, 'Add On');
-
-        // $memBillingId =  ?: null;
-        // $preconfiguredDisks = $this->getConfigDiskOptions();
-        // $preconfiguredAddons = getConfigAddonOptions($this->config->option(WhmcsConfig::ADDON_BILLING_IDS));
-
-        // if ($parsedDisks) {
-        //     $diskBillingIds = $this->multiChoice($parsedDisks, '/Drive Bay ([0-9]+)(.*)/');
-        // }
-
-        // if ($parsedAddons) {
-        //
-        // }
-
-
-
-        // print_r($disks);
-
-        // echo '<pre>'; var_dump($disks); echo '</pre>';
+        $preconfiguredMemory = $this->getConfigValues(WhmcsConfig::MEM_BILLING_ID, 'Memory', false, true);
+        $preconfiguredDisks = $this->getConfigValues(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay', false, false);
+        $preconfiguredAddons = $this->addons($this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS, 'Add On', false, false));
 
         return [
-            'mem_billing' => $this->config->option(WhmcsConfig::MEM_BILLING_ID) ?: $memory,
+            'mem_billing' => $preconfiguredMemory[0] ?: $memory,
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
             'disks_billing' => $preconfiguredDisks ?: $disks,
-            'addons_billing' => $preconfiguredAddons ?: $this->addons($choices),
+            'addons_billing' => $preconfiguredAddons ?: $addons,
             'ip_group_billing' => $this->ipGroupChoice(),
         ];
     }
-
-    // function console_log($data)
-    // {
-    //     echo '<script>';
-    //     echo 'console.log('. json_encode( $data ) .')';
-    //     echo '</script>';
-    // }
 
     /**
      * @param string $osChoice
@@ -375,11 +352,11 @@ class ServerProvisioner
             $params['password']
         );
 
-        array_filter($presetConfigOptions = [
-            'Memory' => $this->config->option(WhmcsConfig::MEM_BILLING_ID),
-            'Disk(s)' => $this->getConfigDiskOptions(),
-            'Addon(s)' => $this->getConfigAddonOptions(),
-        ]);
+        $presetConfigOptions = array_merge(
+            $this->getConfigValues(WhmcsConfig::MEM_BILLING_ID, 'Memory', true, true) ?: [],
+            $this->getConfigValues(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay', true, false) ?: [],
+            $this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS, 'Add On', true, false) ?: []
+        );
 
         foreach ($presetConfigOptions as $optionName => $billingVal) {
             if ($presetConfigOptions[$optionName]) {
@@ -393,11 +370,13 @@ class ServerProvisioner
 
         $configOpts = $this->whmcs->configOptions();
         foreach ($params['configoptions'] as $optName => $billingVal) {
-            $message .= sprintf(
-                "%s: %s\n",
-                $optName,
-                $configOpts[$optName][$billingVal]
-            );
+            if (!array_key_exists($optName, $presetConfigOptions)) {
+                $message .= sprintf(
+                    "%s: %s\n",
+                    $optName,
+                    $configOpts[$optName][$billingVal]
+                );
+            }
         }
 
         $this->tickets->createAndLogErrors([
@@ -407,64 +386,58 @@ class ServerProvisioner
         ]);
     }
 
-    // /**
-    //  *
-    //  * @return array
-    //  */
-    // private function getPresetConfigOptions()
-    // {
-    //     $configDiskBillingIds = $this->parseConfigOptions($this->config->option(WhmcsConfig::DISK_BILLING_IDS));
-    //     $configAddonBillingIds = $this->parseConfigOptions($this->config->option(WhmcsConfig::ADDON_BILLING_IDS));
-    //     $diskIDs = [];
-    //     $addonIDs = [];
-    //
-    //     foreach($configDiskBillingIds as $key => $disk)
-    //     {
-    //         $newKey = 'Drive Bay ' . $key;
-    //         $diskIDs[$newKey] = $disk;
-    //     }
-    //
-    //     foreach($configAddonBillingIds as $key => $addon)
-    //     {
-    //         $newKey = 'Addon ' . $key;
-    //         $addonIDs[$newKey] = $addon;
-    //     }
-    //
-    //
-    //     $presetConfigOptions = [
-    //         'Memory' => $this->config->option(WhmcsConfig::MEM_BILLING_ID),
-    //         // 'Drive Bay 1' => $this->config->option(WhmcsConfig::DISK_BILLING_IDS),
-    //         // 'Addons' => $this->config->option(WhmcsConfig::ADDON_BILLING_IDS),
-    //     ];
-    //
-    //     return $presetConfigOptions + $diskIDs + $addonIDs;
-    // }
+    /**
+     * @param string $configID
+     * @param string $newKey
+     * @param bool $getNames    tells the function to return the frontend names that users see
+     * @param bool $singular    tells the function not to append a number to the end of the billing name if it a field that is named in a singular way.
+     *
+     * @return array|null
+     */
+    private function getConfigValues(string $configID, string $newKey, bool $getNames, bool $singular)
+    {
+        $configValue = $this->config->option($configID) ?: null;
 
-    // /**
-    //  * @param string $configID
-    //  * @param string $newKey
-    //  *
-    //  * @return array|null
-    //  */
-    // private function getConfigValue(string $configID, string $newKey)
-    // {
-    //     // $result = [];
-    //     $configValue = $this->config->option($configID) ?: null;
-    //
-    //     if (!$configValue) {
-    //       return null;
-    //     }
-    //
-    //     // $configValues = array_map('trim', explode(',', $configValue));
-    //     //
-    //     // foreach($configValues as $index => $configValue) {
-    //     //     $key = $newKey . ' ' . ($index + 1);
-    //     //     $result[$key] = $configValue;
-    //     // }
-    //     //
-    //     // return $result;
-    //     return null;
-    // }
+        if (!$configValue) {
+          return null;
+        }
+
+        $configNamesAndValues = explode('|', $configValue);
+
+        if ($getNames && sizeof($configNamesAndValues) === 2) {
+            return $this->parseConfigOptions($configNamesAndValues[1], $newKey, $singular);
+        }
+
+        if (sizeof($configNamesAndValues) === 2) {
+            return $this->parseConfigOptions($configNamesAndValues[0], $newKey, $singular);
+        }
+
+        return $this->parseConfigOptions($configValue, $newKey, $singular);
+    }
+
+    /**
+     * @param string $configOptions
+     * @param string $newKey
+     * @param bool $singular    tells the function not to append a number to the end of the billing name if it a field that is named in a singular way.
+     *
+     * @return array
+     */
+    private function parseConfigOptions(string $configOptions, string $newKey, bool $singular)
+    {
+        $result = [];
+        $configValues = array_map('trim', explode(',', $configOptions));
+
+        foreach($configValues as $index => $configValue) {
+            if ($singular) {
+                $key = $newKey;
+            } else {
+                $key = $newKey . ' ' . ($index + 1);
+            }
+            $result[$key] = $configValue;
+        }
+
+        return $result;
+    }
 
     /**
      * @param array $params
@@ -498,8 +471,6 @@ class ServerProvisioner
      */
     private function addons(array $choices)
     {
-        $addons = $this->multiChoice($choices, '/Add On ([0-9]+)/');
-
         return array_filter($addons, function ($addOn) {
             switch ($addOn) {
             case 'ADD-RAID1':
