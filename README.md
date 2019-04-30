@@ -30,17 +30,17 @@
     - CPU Billing ID: Whatever the CPU Billing ID is on SynergyCP
     - API User: The username of any WHMCS admin that has API access enabled.
     - PXE/IPMI/Switch Access: Select which permissions you wish to grant to each client on any automated provisions.
-    - Termination Action: What to do when a client's server is terminated due to billing issues. Note that this is overridden to create ticket for VIP clients no matter what. 
+    - Termination Action: What to do when a client's server is terminated due to billing issues. Note that this is overridden to create ticket for VIP clients no matter what.
     - Pre-OS Install: We recommend format-quick as the Pre-OS install. Formats are required before some OS reloads to get rid of the old disk partition table.
- 
+
 ### Configurable Options
 
 Configurable Options use the billing ID on WHMCS to link up with the billing ID on SynergyCP.
 
 The billing ID is specified before the value shown to the user separated by a Unix pipe character:
- 
+
 ![selection](https://user-images.githubusercontent.com/229041/30526732-a3009a72-9bd4-11e7-9a83-cf2f963f490c.png)
- 
+
 Every SynergyCP product on WHMCS must include the following Configurable Options (names must match exactly):
 
 | WHMCS Configurable Field Name                          | Example Field Value             | Special Notes                                                                          |
@@ -53,3 +53,7 @@ Every SynergyCP product on WHMCS must include the following Configurable Options
 | Drive Bay 1, Drive Bay 2, etc. (any number of entries) | 1TB-HDD&#124;1 TB Hard Drive                              | The billing ID value should be None for empty disk bays.                                 |
 | Operating System                                       | os-centos6&#124;CentOS 6                                  | The billing ID must match an OS Reload Profile's Billing ID on SynergyCP |
 | Bandwidth                                              | 20000GB&#124;20 TB Bandwidth or &#124;Unmetered Bandwidth | Optional. The billing ID **MUST** use the same unit as your overage billing setting in WHMCS (default is GB) |
+
+**Preset Configurable Options**:
+
+Under Products/Services < Module Settings there are the MEM Billing ID, Addon Billing IDs, and Disk Billing IDs fields. These can be set as default preset values for these fields. If the corresponding Configurable Option field is included it will override its respective field. These fields use a comma-separated format that allows for multiple values: add-1, add-2|Addon1, Addon2
