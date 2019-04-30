@@ -15,31 +15,31 @@ class WhmcsConfig
      * Config Options (make sure to update count below when adding).
      */
     const CPU_BILLING_ID = 1;
-    const MEM_BILLING_ID = 2;
-    const DISK_BILLING_IDS = 3;
-    const ADDON_BILLING_IDS = 4;
-    const API_USER = 5;
-    const TICKET_DEPT = 6;
-    const PXE_ACCESS = 7;
-    const IPMI_ACCESS = 8;
-    const SWITCH_ACCESS = 9;
-    const DELETE_ACTION = 10;
-    const PRE_INSTALL = 11;
+    const API_USER = 2;
+    const TICKET_DEPT = 3;
+    const PXE_ACCESS = 4;
+    const IPMI_ACCESS = 5;
+    const SWITCH_ACCESS = 6;
+    const DELETE_ACTION = 7;
+    const PRE_INSTALL = 8;
+    const MEM_BILLING_ID = 9;
+    const DISK_BILLING_IDS = 10;
+    const ADDON_BILLING_IDS = 11;
 
     /**
      * The 1-based index of the last Config Option.
      *
      * @var int
      */
-    protected $countOptions = self::PRE_INSTALL;
+    protected $countOptions = self::ADDON_BILLING_IDS;
 
-    const MEM_BILLING_DESC = 'Billing ID of the RAM. Setting this will override user-selected RAM options. ex: mem-1 | 8 GB RAM';
-    const DISK_BILLING_DESC = 'Billing ID of the Hard Disks. Multiple can be separated by commas. Setting this will override user-selected disk options. ex: disk-1, disk-2 | 1 TB HDD, 2 TB HDD';
-    const ADDON_BILLING_DESC = 'Billing ID of the Addons. Multiple can be separated by commas. Setting this will override user-selected addon options. ex: add-1, add-2 | Addon 1, Addon 2';
     const API_USER_DESC = 'This must be an administrator user with API access enabled.';
     const TICKET_DEPT_DESC = 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.';
     const DELETE_ACTION_DESC = 'When a product is terminated, this action will occur.';
     const PRE_INSTALL_DESC = 'Billing ID of an OS Reload that will be run before each install, e.g. format-quick. Multiple can be separated by a comma.';
+    const MEM_BILLING_DESC = 'Optional preset Billing ID of the RAM. This field is overrided when the \'Memory\' Configurable Option is present. ex: mem-1 | 8 GB RAM';
+    const DISK_BILLING_DESC = 'Optional preset Billing ID of the Hard Disks. Multiple can be separated by commas. This field is overrided when the \'Drive Bay\' Configurable Options are present. ex: disk-1, disk-2 | 1 TB HDD, 2 TB HDD';
+    const ADDON_BILLING_DESC = 'Optional preset Billing ID of the Addons. Multiple can be separated by commas. This field is overrided when the \'Add On\' Configurable Options are present. ex: add-1, add-2 | Addon 1, Addon 2';
 
     const DELETE_ACTION_WIPE = 0;
     const DELETE_ACTION_TICKET = 1;
@@ -128,24 +128,6 @@ class WhmcsConfig
                 'Size' => '50',
                 'Description' => '',
             ];
-        case static::MEM_BILLING_ID:
-            return $config['MEM Billing ID'] = [
-                'Type' => 'text',
-                'Size' => '50',
-                'Description' => self::MEM_BILLING_DESC,
-            ];
-        case static::DISK_BILLING_IDS:
-            return $config['Disk Billing IDs'] = [
-                'Type' => 'text',
-                'Size' => '50',
-                'Description' => self::DISK_BILLING_DESC,
-            ];
-        case static::ADDON_BILLING_IDS:
-            return $config['Addon Billing IDs'] = [
-                'Type' => 'text',
-                'Size' => '100',
-                'Description' => self::ADDON_BILLING_DESC,
-            ];
         case static::API_USER:
             return $config['API User'] = [
                 'Type' => 'text',
@@ -184,6 +166,24 @@ class WhmcsConfig
                 'Type' => 'text',
                 'Size' => '50',
                 'Description' => self::PRE_INSTALL_DESC,
+            ];
+        case static::MEM_BILLING_ID:
+            return $config['MEM Billing ID'] = [
+                'Type' => 'text',
+                'Size' => '50',
+                'Description' => self::MEM_BILLING_DESC,
+            ];
+        case static::DISK_BILLING_IDS:
+            return $config['Disk Billing IDs'] = [
+                'Type' => 'text',
+                'Size' => '50',
+                'Description' => self::DISK_BILLING_DESC,
+            ];
+        case static::ADDON_BILLING_IDS:
+            return $config['Addon Billing IDs'] = [
+                'Type' => 'text',
+                'Size' => '100',
+                'Description' => self::ADDON_BILLING_DESC,
             ];
         }
     }

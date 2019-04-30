@@ -238,15 +238,11 @@ class ServerProvisioner
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
         $addons = $this->addons($this->multiChoice($choices, '/Add On ([0-9]+)/'));
 
-        $preconfiguredMemory = $this->getConfigValues(WhmcsConfig::MEM_BILLING_ID, 'Memory', false, true);
-        $preconfiguredDisks = $this->getConfigValues(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay', false, false);
-        $preconfiguredAddons = $this->addons($this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS, 'Add On', false, false));
-
         return [
-            'mem_billing' => $preconfiguredMemory ?: $memory,
+            'mem_billing' => $memory ?: $this->getConfigValue(WhmcsConfig::MEM_BILLING_ID),
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
-            'disks_billing' => $preconfiguredDisks ?: $disks,
-            'addons_billing' => $preconfiguredAddons ?: $addons,
+            'disks_billing' => $disks ?: $this->getConfigValues(WhmcsConfig::DISK_BILLING_IDS),
+            'addons_billing' => $addons ?: $this->addons($this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS)),
             'ip_group_billing' => $this->ipGroupChoice(),
         ];
     }
@@ -353,13 +349,14 @@ class ServerProvisioner
         );
 
         $presetConfigOptions = array_merge(
-            $this->getConfigValues(WhmcsConfig::MEM_BILLING_ID, 'Memory', true, true) ?: [],
-            $this->getConfigValues(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay', true, false) ?: [],
-            $this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS, 'Add On', true, false) ?: []
+            $this->getConfigName(WhmcsConfig::MEM_BILLING_ID, 'Memory') ?: [],
+            $this->getConfigNames(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay') ?: [],
+            $this->getConfigNames(WhmcsConfig::ADDON_BILLING_IDS, 'Add On') ?: []
         );
 
+        $configOpts = $this->whmcs->configOptions();
         foreach ($presetConfigOptions as $optionName => $billingVal) {
-            if ($presetConfigOptions[$optionName]) {
+            if (!array_key_exists($optionName, $configOpts)) {
                 $message .= sprintf(
                     "%s: %s\n",
                     $optionName,
@@ -368,15 +365,12 @@ class ServerProvisioner
             }
         }
 
-        $configOpts = $this->whmcs->configOptions();
         foreach ($params['configoptions'] as $optName => $billingVal) {
-            if (!array_key_exists($optName, $presetConfigOptions)) {
-                $message .= sprintf(
-                    "%s: %s\n",
-                    $optName,
-                    $configOpts[$optName][$billingVal]
-                );
-            }
+            $message .= sprintf(
+                "%s: %s\n",
+                $optName,
+                $configOpts[$optName][$billingVal]
+            );
         }
 
         $this->tickets->createAndLogErrors([
@@ -384,59 +378,6 @@ class ServerProvisioner
             'subject' => 'Server provisioning request',
             'message' => $message,
         ]);
-    }
-
-    /**
-     * @param string $configID
-     * @param string $newKey
-     * @param bool $getNames    tells the function to return the frontend names that users see
-     * @param bool $singular    tells the function not to append a number to the end of the billing name if it a field that is named in a singular way.
-     *
-     * @return array|null
-     */
-    private function getConfigValues(string $configID, string $newKey, bool $getNames, bool $singular)
-    {
-        $configValue = $this->config->option($configID) ?: null;
-
-        if (!$configValue) {
-          return null;
-        }
-
-        $configNamesAndValues = explode('|', $configValue);
-
-        if ($getNames && sizeof($configNamesAndValues) === 2) {
-            return $this->parseConfigOptions($configNamesAndValues[1], $newKey, $singular);
-        }
-
-        if (sizeof($configNamesAndValues) === 2) {
-            return $this->parseConfigOptions($configNamesAndValues[0], $newKey, $singular);
-        }
-
-        return $this->parseConfigOptions($configValue, $newKey, $singular);
-    }
-
-    /**
-     * @param string $configOptions
-     * @param string $newKey
-     * @param bool $singular    tells the function not to append a number to the end of the billing name if it a field that is named in a singular way.
-     *
-     * @return array
-     */
-    private function parseConfigOptions(string $configOptions, string $newKey, bool $singular)
-    {
-        $result = [];
-        $configValues = array_map('trim', explode(',', $configOptions));
-
-        foreach($configValues as $index => $configValue) {
-            if ($singular) {
-                $key = $newKey;
-            } else {
-                $key = $newKey . ' ' . ($index + 1);
-            }
-            $result[$key] = $configValue;
-        }
-
-        return $result;
     }
 
     /**
@@ -465,11 +406,11 @@ class ServerProvisioner
     }
 
     /**
-     * @param array $choices
+     * @param array $addons
      *
      * @return array
      */
-    private function addons(array $choices)
+    private function addons(array $addons)
     {
         return array_filter($addons, function ($addOn) {
             switch ($addOn) {
@@ -485,5 +426,119 @@ class ServerProvisioner
 
             return false;
         });
+    }
+
+    /**
+     * @param string $configID
+     *
+     * @return array
+     */
+    private function getConfigValues(string $configID)
+    {
+        if (!$configNamesAndValues = $this->parseConfigValuesAndNames($configID)) {
+            return null;
+        }
+
+        return $this->parseConfigValues($configNamesAndValues[0]);
+    }
+
+    /**
+     * @param string $configID
+     *
+     * @return string
+     */
+    private function getConfigValue(string $configID)
+    {
+        if (!$configNamesAndValues = $this->parseConfigValuesAndNames($configID)) {
+            return null;
+        }
+
+        return trim($configNamesAndValues[0]);
+    }
+
+    /**
+     * @param string $configID
+     * @param string $newKey
+     *
+     * @return array
+     */
+    private function getConfigNames(string $configID, string $newKey)
+    {
+        if (!$configNamesAndValues = $this->parseConfigValuesAndNames($configID)) {
+            return null;
+        }
+
+        $configNamesOrValues = $configNamesAndValues[1] ?: $configNamesAndValues[0];
+
+        return $this->parseConfigNames($configNamesOrValues, $newKey);
+    }
+
+    /**
+     * @param string $configID
+     * @param string $newKey
+     *
+     * @return array
+     */
+    private function getConfigName(string $configID, string $newKey)
+    {
+        if (!$configNamesAndValues = $this->parseConfigValuesAndNames($configID)) {
+            return null;
+        }
+
+        $untrimmedConfigName = $configNamesAndValues[1] ?: $configNamesAndValues[0];
+
+        $configName = trim($untrimmedConfigName);
+
+        return [
+            $newKey => $configName
+        ];
+    }
+
+    /**
+     * @param string $configValue
+     *
+     * @return array
+     */
+    private function parseConfigValues(string $configValue)
+    {
+        $configValues = array_map('trim', explode(',', $configValue));
+
+        foreach($configValues as $value) {
+            $result[] = $value;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param string $configValue
+     * @param string $newKey
+     *
+     * @return array
+     */
+    private function parseConfigNames(string $configValue, string $newKey)
+    {
+        $configValues = array_map('trim', explode(',', $configValue));
+
+        foreach($configValues as $index => $configValue) {
+            $key = $newKey . ' ' . ($index + 1);
+            $result[$key] = $configValue;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param string $configID
+     *
+     * @return array
+     */
+    private function parseConfigValuesAndNames(string $configID)
+    {
+        if (!$configValues = $this->config->option($configID)) {
+            return null;
+        }
+
+        return explode('|', $configValues);
     }
 }
