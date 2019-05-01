@@ -6,6 +6,8 @@ use Scp\Whmcs\Server\Usage\UsageFormatter;
 use Scp\Whmcs\Client\ClientService;
 use Scp\Whmcs\Api;
 use Scp\Whmcs\Database\Database;
+use Scp\Whmcs\Whmcs\WhmcsConfig;
+use Scp\Api\ApiSingleSignOn;
 
 class WhmcsTemplates
 {
@@ -34,21 +36,36 @@ class WhmcsTemplates
     protected $format;
 
     /**
+     * @var WhmcsConfig
+     */
+    protected $config;
+
+    /**
      * @var Database
      */
     protected $database;
 
+    /**
+     * @param Api                       $api
+     * @param ClientService             $client
+     * @param ServerService             $server
+     * @param UsageFormatter            $format
+     * @param WhmcsConfig               $config
+     * @param Database                  $database
+     */
     public function __construct(
         Api $api,
-        Database $database,
         ClientService $client,
         ServerService $server,
-        UsageFormatter $format
+        UsageFormatter $format,
+        WhmcsConfig $config,
+        Database $database
     ) {
         $this->api = $api;
         $this->client = $client;
         $this->server = $server;
         $this->format = $format;
+        $this->config = $config;
         $this->database = $database;
     }
 
@@ -67,6 +84,8 @@ class WhmcsTemplates
         $apiKey = $this->client->apiKey();
         $urlApi = $this->api->baseUrl();
         $password = $this->generatePassword(10);
+        $manage = $this->config->option(WhmcsConfig::CLIENT_MANAGE_BUTTON);
+        $embed = $this->config->option(WhmcsConfig::CLIENT_EMBEDDED_SERVER_MANAGE);
 
         return [
             'templatefile' => 'clientarea',
@@ -79,6 +98,9 @@ class WhmcsTemplates
                 'apiKey' => $apiKey->key,
                 'apiUrl' => $urlApi,
                 'bandwidth' => $this->clientAreaBandwidth(),
+                'manage' => $manage,
+                'embed' => $embed,
+                'embedUrl' => $this->getEmbeddedServerManagerUrl(),
             ],
         ];
     }
@@ -115,6 +137,24 @@ class WhmcsTemplates
         }
 
         return $randomString;
+    }
+
+    /**
+     * @return string
+     *
+     */
+    public function getEmbeddedServerManagerUrl()
+    {
+        $apiKey = $this->client->apiKey();
+        $server = $this->server->currentOrFail();
+
+        $sso = new ApiSingleSignOn($apiKey);
+
+        if ($server) {
+            $sso->view($server);
+        }
+
+        return $sso->url();
     }
 
     public static function functions()
