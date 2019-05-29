@@ -154,7 +154,7 @@ class WhmcsTemplates
             $sso->view($server);
         }
 
-        return $sso->url();
+        return $sso->embeddedUrl();
     }
 
     public static function functions()
