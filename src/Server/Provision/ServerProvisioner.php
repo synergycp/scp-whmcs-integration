@@ -502,9 +502,9 @@ class ServerProvisioner
             return null;
         }
 
-        $configNamesOrValues = $delimitedString[1] ?: $delimitedString[0];
+        $configName = $delimitedString[1] ?: $delimitedString[0];
 
-        return $this->csvToAssociativeArray($configNamesOrValues, $newKey);
+        return $this->csvToAssociativeArray($configName, $newKey);
     }
 
     /**
