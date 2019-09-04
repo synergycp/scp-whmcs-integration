@@ -237,11 +237,12 @@ class ServerProvisioner
         $memory = $this->config->getOption('Memory');
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
         $addons = $this->addons($this->multiChoice($choices, '/Add On ([0-9]+)/'));
+        $configAddons = $this->addons($this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS));
 
-        $configAddons = $this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS);
-        if ($configAddons) {
-            $configAddons = $this->addons($configAddons);
-        }
+        // $configAddons = $this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS);
+        // if ($configAddons) {
+        //     $configAddons = $this->addons($configAddons);
+        // }
 
         return [
             'mem_billing' => $memory ?: $this->getConfigValue(WhmcsConfig::MEM_BILLING_ID),
@@ -353,11 +354,14 @@ class ServerProvisioner
             $params['password']
         );
 
-        $presetConfigOptions = array_merge(
-            $this->getConfigName(WhmcsConfig::MEM_BILLING_ID, 'Memory') ?: [],
+        $presetConfigOptions = array_filter(array_merge(
+            [
+                'Memory' => $this->getConfigName(WhmcsConfig::MEM_BILLING_ID),
+            ],
+            // $this->getConfigName(WhmcsConfig::MEM_BILLING_ID, 'Memory') ?: [],
             $this->getConfigNames(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay') ?: [],
             $this->getConfigNames(WhmcsConfig::ADDON_BILLING_IDS, 'Add On') ?: []
-        );
+        ));
 
         $configOpts = $this->whmcs->configOptions();
         foreach ($presetConfigOptions as $optionName => $billingVal) {
@@ -440,11 +444,11 @@ class ServerProvisioner
      */
     private function getConfigValues(string $configID)
     {
-        if (!$configNamesAndValues = $this->parseConfigValuesAndNames($configID)) {
+        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
             return null;
         }
 
-        return $this->parseConfigValues($configNamesAndValues[0]);
+        return $this->csvToArray($delimitedString[0]);
     }
 
     /**
@@ -454,11 +458,11 @@ class ServerProvisioner
      */
     private function getConfigValue(string $configID)
     {
-        if (!$configNamesAndValues = $this->parseConfigValuesAndNames($configID)) {
+        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
             return null;
         }
 
-        return trim($configNamesAndValues[0]);
+        return trim($delimitedString[0]);
     }
 
     /**
@@ -469,34 +473,32 @@ class ServerProvisioner
      */
     private function getConfigNames(string $configID, string $newKey)
     {
-        if (!$configNamesAndValues = $this->parseConfigValuesAndNames($configID)) {
+        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
             return null;
         }
 
-        $configNamesOrValues = $configNamesAndValues[1] ?: $configNamesAndValues[0];
+        $configNamesOrValues = $delimitedString[1] ?: $delimitedString[0];
 
-        return $this->parseConfigNames($configNamesOrValues, $newKey);
+        return $this->csvToAssociativeArray($configNamesOrValues, $newKey);
     }
 
     /**
      * @param string $configID
      * @param string $newKey
      *
-     * @return array
+     * @return string
      */
-    private function getConfigName(string $configID, string $newKey)
+    private function getConfigName(string $configID)
     {
-        if (!$configNamesAndValues = $this->parseConfigValuesAndNames($configID)) {
+        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
             return null;
         }
 
-        $untrimmedConfigName = $configNamesAndValues[1] ?: $configNamesAndValues[0];
+        $untrimmedConfigName = $delimitedString[1] ?: $delimitedString[0];
 
         $configName = trim($untrimmedConfigName);
 
-        return [
-            $newKey => $configName
-        ];
+        return $configName;
     }
 
     /**
@@ -504,15 +506,11 @@ class ServerProvisioner
      *
      * @return array
      */
-    private function parseConfigValues(string $configValue)
+    private function csvToArray(string $configValue)
     {
         $configValues = array_map('trim', explode(',', $configValue));
 
-        foreach($configValues as $value) {
-            $result[] = $value;
-        }
-
-        return $result;
+        return $configValues;
     }
 
     /**
@@ -521,7 +519,7 @@ class ServerProvisioner
      *
      * @return array
      */
-    private function parseConfigNames(string $configValue, string $newKey)
+    private function csvToAssociativeArray(string $configValue, string $newKey)
     {
         $configValues = array_map('trim', explode(',', $configValue));
 
@@ -538,7 +536,7 @@ class ServerProvisioner
      *
      * @return array
      */
-    private function parseConfigValuesAndNames(string $configID)
+    private function splitStringByDelimiter(string $configID)
     {
         if (!$configValues = $this->config->option($configID)) {
             return null;

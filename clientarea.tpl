@@ -117,26 +117,12 @@
   </div>
 {/if}
 
-{if $manage}
-  <hr />
-  <form method="post" action="{$url_action}">
-    <input type="hidden" name="a" value="btn_manage" />
-    <input type="submit" value="Manage on SynergyCP" class="btn btn-info" />
-  </form>
-  <br />
-{/if}
-
-{if $embed}
-  <iframe src="{$embedUrl}" width="100%" height="1000" name="test1" id="test1">
-    <p>iFrames are not supported by your browser.</p>
-    <form method="post" action="{$url_action}">
-      <input type="hidden" name="a" value="btn_manage" />
-      <input type="submit" value="Manage on SynergyCP" class="btn btn-info" />
-    </form>
-  </iframe>
-{/if}
-
-
+<hr />
+<form method="post" action="{$url_action}">
+  <input type="hidden" name="a" value="btn_manage" />
+  <input type="submit" value="Manage on SynergyCP" class="btn btn-info" />
+</form>
+<br />
 
 <script type="text/javascript" src="{$WEB_ROOT}{$MODULE_FOLDER}/assets/base.js"></script>
 <script type="text/javascript" src="{$WEB_ROOT}{$MODULE_FOLDER}/assets/client-area.js"></script>
