@@ -262,17 +262,17 @@ class ServerProvisioner
         $memory = $this->config->getOption('Memory');
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
         $addons = $this->addons($this->multiChoice($choices, '/Add On ([0-9]+)/'));
-        $configAddons = $this->addons($this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS));
+        $configAddons = $this->addons($this->getConfigBillingValues(WhmcsConfig::ADDON_BILLING_IDS));
 
-        // $configAddons = $this->getConfigValues(WhmcsConfig::ADDON_BILLING_IDS);
+        // $configAddons = $this->getConfigBillingValues(WhmcsConfig::ADDON_BILLING_IDS);
         // if ($configAddons) {
         //     $configAddons = $this->addons($configAddons);
         // }
 
         return [
-            'mem_billing' => $memory ?: $this->getConfigValue(WhmcsConfig::MEM_BILLING_ID),
+            'mem_billing' => $memory ?: $this->getConfigBillingValue(WhmcsConfig::MEM_BILLING_ID),
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
-            'disks_billing' => $disks ?: $this->getConfigValues(WhmcsConfig::DISK_BILLING_IDS),
+            'disks_billing' => $disks ?: $this->getConfigBillingValues(WhmcsConfig::DISK_BILLING_IDS),
             'addons_billing' => $addons ?: $configAddons,
             'ip_group_billing' => $this->ipGroupChoice(),
         ];
@@ -467,7 +467,7 @@ class ServerProvisioner
      *
      * @return array
      */
-    private function getConfigValues(string $configID)
+    private function getConfigBillingValues(string $configID)
     {
         if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
             return null;
@@ -481,7 +481,7 @@ class ServerProvisioner
      *
      * @return string
      */
-    private function getConfigValue(string $configID)
+    private function getConfigBillingValue(string $configID)
     {
         if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
             return null;
