@@ -9,7 +9,7 @@ class UsageFormatterTest extends TestCase
      */
     protected $format;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->format = new UsageFormatter();
     }
@@ -18,12 +18,12 @@ class UsageFormatterTest extends TestCase
     {
         $this->assertEquals(
             $this->format->bitsToMB(8),
-            1
+            1e-6
         );
 
         $this->assertEquals(
-            $this->format->bitsToMB(8000),
-            1000
+            $this->format->bitsToMB(8000000),
+            1
         );
     }
 

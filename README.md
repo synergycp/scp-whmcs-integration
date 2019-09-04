@@ -43,15 +43,15 @@ The billing ID is specified before the value shown to the user separated by a Un
 
 Every SynergyCP product on WHMCS must include the following Configurable Options (names must match exactly):
 
-| WHMCS Configurable Field Name                          | Example Field Value             | Special Notes                                                                          |
-|--------------------------------------------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------  |
-| Memory                                                 | 8GB&#124;8GB RAM                                          |                                                                                          |
-| Datacenter Location                                    | LOC-LA&#124;Los Angeles                                   | This must correspond to an IP Group in SynergyCP.                                        |
-| Network Port Speed                                     | speed-1000&#124;Gigabit Uplink                            |                                                                                          |
-| IPv4 Addresses                                         | IP-29&#124;/29 Block (5 Usable IP Addresses)              |                                                                                          |
-| Add On 1, Add On 2, etc. (any number of entries)       | HW-RAID&#124;Hardware RAID Controller                     | Use ADD- RAID1 and ADD-RAID0 as billing IDs for automatic software RAID configuration.   |
-| Drive Bay 1, Drive Bay 2, etc. (any number of entries) | 1TB-HDD&#124;1 TB Hard Drive                              | The billing ID value should be None for empty disk bays.                                 |
-| Operating System                                       | os-centos6&#124;CentOS 6                                  | The billing ID must match an OS Reload Profile's Billing ID on SynergyCP |
+| WHMCS Configurable Field Name                          | Example Field Value             | Special Notes                                                                                                                          |
+|--------------------------------------------------------|-----------------------------------------------------------|------------------------------------------------------------------------------------------------------------- |
+| Memory                                                 | 8GB&#124;8GB RAM                                          |                                                                                                              |
+| Datacenter Location                                    | LOC-LA1,LOC-LA2&#124;Los Angeles                          | This must correspond to an IP Group in SynergyCP. Accepts comma-separated billing IDs.                       |
+| Network Port Speed                                     | speed-1000&#124;Gigabit Uplink                            |                                                                                                              |
+| IPv4 Addresses                                         | IP-29&#124;/29 Block (5 Usable IP Addresses)              |                                                                                                              |
+| Add On 1, Add On 2, etc. (any number of entries)       | HW-RAID&#124;Hardware RAID Controller                     | Use ADD- RAID1 and ADD-RAID0 as billing IDs for automatic software RAID configuration.                       |
+| Drive Bay 1, Drive Bay 2, etc. (any number of entries) | 1TB-HDD&#124;1 TB Hard Drive                              | The billing ID value should be None for empty disk bays.                                                     |
+| Operating System                                       | os-centos6&#124;CentOS 6                                  | The billing ID must match an OS Reload Profile's Billing ID on SynergyCP                                     |
 | Bandwidth                                              | 20000GB&#124;20 TB Bandwidth or &#124;Unmetered Bandwidth | Optional. The billing ID **MUST** use the same unit as your overage billing setting in WHMCS (default is GB) |
 
 **Preset Configurable Options**:

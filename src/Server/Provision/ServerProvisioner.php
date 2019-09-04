@@ -2,6 +2,7 @@
 
 namespace Scp\Whmcs\Server\Provision;
 
+use Scp\Entity\EntityRepository;
 use Scp\Server\ServerProvisioner as OriginalServerProvisioner;
 use Scp\Whmcs\LogFactory;
 use Scp\Whmcs\Database\Database;
@@ -65,6 +66,11 @@ class ServerProvisioner
     protected $fields;
 
     /**
+     * @var EntityRepository
+     */
+    protected $entities;
+
+    /**
      * @var int|null
      */
     private $softRaid;
@@ -76,6 +82,7 @@ class ServerProvisioner
      * @param WhmcsConfig               $config
      * @param ClientService             $client
      * @param TicketManager             $tickets
+     * @param EntityRepository          $entities
      * @param ServerFieldsService       $fields
      * @param OriginalServerProvisioner $provision
      */
@@ -86,6 +93,7 @@ class ServerProvisioner
         WhmcsConfig $config,
         ClientService $client,
         TicketManager $tickets,
+        EntityRepository $entities,
         ServerFieldsService $fields,
         OriginalServerProvisioner $provision
     ) {
@@ -95,6 +103,7 @@ class ServerProvisioner
         $this->client = $client;
         $this->fields = $fields;
         $this->tickets = $tickets;
+        $this->entities = $entities;
         $this->database = $database;
         $this->provision = $provision;
     }
@@ -121,7 +130,7 @@ class ServerProvisioner
             $this->sep,
             $choices['Operating System']
         );
-        $osChoices = array_filter(explode($this->sep, $osChoicesString));
+        $osChoices = $this->split($osChoicesString);
         $osChoice = array_shift($osChoices);
 
         $password = $params['password'];
@@ -175,9 +184,10 @@ class ServerProvisioner
      */
     public function getEntities()
     {
-        return Entity::query()
+        return $this->entities
+            ->query()
             ->where('group', [
-                'billing' => $this->ipGroupChoice(),
+                'billing' => $this->ipGroupChoices(),
             ])
             ->where('billing_id', $this->getIps())
             ->where('server', 'none')
@@ -212,11 +222,26 @@ class ServerProvisioner
     }
 
     /**
-     * @return string
+     * @return array
      */
-    private function ipGroupChoice()
+    private function ipGroupChoices()
     {
-        return $this->config->getOption('Datacenter Location');
+        return $this->split($this->config->getOption('Datacenter Location'));
+    }
+
+    /**
+     * @param string $input
+     *
+     * @return array
+     */
+    private function split($input)
+    {
+        return array_filter(array_map(
+            function ($val) {
+                return trim($val);
+            },
+            explode($this->sep, $input)
+        ));
     }
 
     /**
