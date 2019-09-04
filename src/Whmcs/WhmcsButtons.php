@@ -575,9 +575,9 @@ class WhmcsButtons
     {
         $server = $this->getServer();
         $url = sprintf(
-            'server/%d/switch/%d',
+            'server/%d/port/%d',
             $server->id,
-            $server->switch_id
+            $server->switch->port->id
         );
 
         return $this->api->asClient()->patch($url, $data);
