@@ -264,17 +264,12 @@ class ServerProvisioner
         $addons = $this->addons($this->multiChoice($choices, '/Add On ([0-9]+)/'));
         $configAddons = $this->addons($this->getConfigBillingValues(WhmcsConfig::ADDON_BILLING_IDS));
 
-        // $configAddons = $this->getConfigBillingValues(WhmcsConfig::ADDON_BILLING_IDS);
-        // if ($configAddons) {
-        //     $configAddons = $this->addons($configAddons);
-        // }
-
         return [
             'mem_billing' => $memory ?: $this->getConfigBillingValue(WhmcsConfig::MEM_BILLING_ID),
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
             'disks_billing' => $disks ?: $this->getConfigBillingValues(WhmcsConfig::DISK_BILLING_IDS),
             'addons_billing' => $addons ?: $configAddons,
-            'ip_group_billing' => $this->ipGroupChoice(),
+            'ip_group_billing' => $this->ipGroupChoices(),
         ];
     }
 
@@ -380,10 +375,7 @@ class ServerProvisioner
         );
 
         $presetConfigOptions = array_filter(array_merge(
-            // [
-            //     'Memory' => $this->getConfigName(WhmcsConfig::MEM_BILLING_ID),
-            // ],
-            // $this->getConfigName(WhmcsConfig::MEM_BILLING_ID, 'Memory') ?: [],
+            ['Memory' => $this->getConfigName(WhmcsConfig::MEM_BILLING_ID)],
             $this->getConfigNames(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay') ?: [],
             $this->getConfigNames(WhmcsConfig::ADDON_BILLING_IDS, 'Add On') ?: []
         ));
