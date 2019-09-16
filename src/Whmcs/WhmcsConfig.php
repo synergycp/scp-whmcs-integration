@@ -192,11 +192,13 @@ class WhmcsConfig
         case static::CLIENT_MANAGE_BUTTON:
             return $config['Client Manage Button'] = [
                 'Type' => 'yesno',
+                'Default' => 'yes',
                 'Description' => self::CLIENT_MANAGE_BUTTON_DESC,
             ];
         case static::CLIENT_EMBEDDED_SERVER_MANAGE:
             return $config['Embedded Client Manage Page '] = [
                 'Type' => 'yesno',
+                'Default' => 'yes',
                 'Description' => self::CLIENT_EMBEDDED_SERVER_MANAGE_DESC,
             ];
         }
