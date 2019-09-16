@@ -100,7 +100,7 @@ class WhmcsTemplates
                 'bandwidth' => $this->clientAreaBandwidth(),
                 'manage' => $manage,
                 'embed' => $embed,
-                'embedUrl' => $this->getEmbeddedServerManagerUrl(),
+                'embedUrl' => $this->getEmbeddedUrl(),
             ],
         ];
     }
@@ -143,12 +143,12 @@ class WhmcsTemplates
      * @return string
      *
      */
-    public function getEmbeddedServerManagerUrl()
+    public function getEmbeddedUrl()
     {
         $apiKey = $this->client->apiKey();
         $server = $this->server->currentOrFail();
-        
-        return new ApiSingleSignOn($apiKey)
+
+        return (new ApiSingleSignOn($apiKey))
           ->view($server)
           ->embed()
           ->url();
