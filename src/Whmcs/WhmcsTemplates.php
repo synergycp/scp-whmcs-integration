@@ -147,11 +147,11 @@ class WhmcsTemplates
     {
         $apiKey = $this->client->apiKey();
         $server = $this->server->currentOrFail();
-        $sso = new ApiSingleSignOn($apiKey);
-        if ($server) {
-            $sso->view($server);
-        }
-        return $sso->embeddedUrl();
+        
+        return new ApiSingleSignOn($apiKey)
+          ->view($server)
+          ->embed()
+          ->url();
     }
 
     public static function functions()
