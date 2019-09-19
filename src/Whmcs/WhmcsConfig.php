@@ -25,15 +25,13 @@ class WhmcsConfig
     const MEM_BILLING_ID = 9;
     const DISK_BILLING_IDS = 10;
     const ADDON_BILLING_IDS = 11;
-    const CLIENT_MANAGE_BUTTON = 12;
-    const CLIENT_EMBEDDED_SERVER_MANAGE = 13;
 
     /**
      * The 1-based index of the last Config Option.
      *
      * @var int
      */
-    protected $countOptions = self::CLIENT_EMBEDDED_SERVER_MANAGE;
+    protected $countOptions = self::ADDON_BILLING_IDS;
 
     const API_USER_DESC = 'This must be an administrator user with API access enabled.';
     const TICKET_DEPT_DESC = 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.';
@@ -42,8 +40,6 @@ class WhmcsConfig
     const MEM_BILLING_DESC = 'Optional preset Billing ID of the RAM. This field is overrided when the \'Memory\' Configurable Option is present. ex: mem-1|8 GB RAM';
     const DISK_BILLING_DESC = 'Optional preset Billing ID of the Hard Disks. Multiple can be separated by commas. This field is overrided when the \'Drive Bay\' Configurable Options are present. ex: disk-1, disk-2|1 TB HDD, 2 TB HDD';
     const ADDON_BILLING_DESC = 'Optional preset Billing ID of the Addons. Multiple can be separated by commas. This field is overrided when the \'Add On\' Configurable Options are present. ex: add-1, add-2|Addon 1, Addon 2';
-    const CLIENT_MANAGE_BUTTON_DESC = 'Adds a Manage on SynergyCP button to client server pages.';
-    const CLIENT_EMBEDDED_SERVER_MANAGE_DESC = 'Adds an embedded Manage on SynergyCP iFrame to client server pages. This requires the SynergyCP API to have HTTPS enabled and for WHMCS to be configured to use it.';
 
     const DELETE_ACTION_WIPE = 0;
     const DELETE_ACTION_TICKET = 1;
@@ -188,16 +184,6 @@ class WhmcsConfig
                 'Type' => 'text',
                 'Size' => '100',
                 'Description' => self::ADDON_BILLING_DESC,
-            ];
-        case static::CLIENT_MANAGE_BUTTON:
-            return $config['Client Manage Button'] = [
-                'Type' => 'yesno',
-                'Description' => self::CLIENT_MANAGE_BUTTON_DESC,
-            ];
-        case static::CLIENT_EMBEDDED_SERVER_MANAGE:
-            return $config['Embedded Client Manage Page '] = [
-                'Type' => 'yesno',
-                'Description' => self::CLIENT_EMBEDDED_SERVER_MANAGE_DESC,
             ];
         }
     }

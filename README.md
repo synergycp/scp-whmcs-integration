@@ -56,4 +56,4 @@ Every SynergyCP product on WHMCS must include the following Configurable Options
 
 **Preset Configurable Options**:
 
-Under Products/Services < Module Settings there are the MEM Billing ID, Addon Billing IDs, and Disk Billing IDs fields. These can be set as default preset values for these fields. If the corresponding Configurable Option field is included it will override its respective field. These fields use a comma-separated format that allows for multiple values: add-1, add-2|Addon1, Addon2
+Under Products/Services < Module Settings there are the MEM Billing ID, Addon Billing IDs, and Disk Billing IDs fields. These can be set as default preset values for these fields. If the corresponding Configurable Option field is included it will override its respective field. These options can be used for setups with complete or partial pre-configuration of servers. The fields use a comma-separated format that allows for multiple values: add-1, add-2|Addon1, Addon2
