@@ -37,9 +37,9 @@ class WhmcsConfig
     const TICKET_DEPT_DESC = 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.';
     const DELETE_ACTION_DESC = 'When a product is terminated, this action will occur.';
     const PRE_INSTALL_DESC = 'Billing ID of an OS Reload that will be run before each install, e.g. format-quick. Multiple can be separated by a comma.';
-    const MEM_BILLING_DESC = 'Optional preset Billing ID of the RAM. This field is overrided when the \'Memory\' Configurable Option is present. ex: mem-1|8 GB RAM';
-    const DISK_BILLING_DESC = 'Optional preset Billing ID of the Hard Disks. Multiple can be separated by commas. This field is overrided when the \'Drive Bay\' Configurable Options are present. ex: disk-1, disk-2|1 TB HDD, 2 TB HDD';
-    const ADDON_BILLING_DESC = 'Optional preset Billing ID of the Addons. Multiple can be separated by commas. This field is overrided when the \'Add On\' Configurable Options are present. ex: add-1, add-2|Addon 1, Addon 2';
+    const MEM_BILLING_DESC = 'Optional preset Billing ID of the RAM. This field is overridden when the \'Memory\' Configurable Option is present. ex: mem-1|8 GB RAM';
+    const DISK_BILLING_DESC = 'Optional preset Billing ID of the Hard Disks. Multiple can be separated by commas. This field is overridden when the \'Drive Bay\' Configurable Options are present. ex: disk-1, disk-2|1 TB HDD, 2 TB HDD';
+    const ADDON_BILLING_DESC = 'Optional preset Billing ID of the Addons. Multiple can be separated by commas. This field is overridden when the \'Add On\' Configurable Options are present. ex: add-1, add-2|Addon 1, Addon 2';
 
     const DELETE_ACTION_WIPE = 0;
     const DELETE_ACTION_TICKET = 1;
