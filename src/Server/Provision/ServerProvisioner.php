@@ -432,7 +432,7 @@ class ServerProvisioner
     }
 
     /**
-     * @param array $addons
+     * @param array|null $addons
      *
      * @return array
      */
