@@ -436,7 +436,7 @@ class ServerProvisioner
      *
      * @return array
      */
-    private function addons(array $addons)
+    private function addons(array $addons = null)
     {
         return array_filter($addons, function ($addOn) {
             switch ($addOn) {
@@ -531,7 +531,7 @@ class ServerProvisioner
     private function csvToAssociativeArray(string $configValue, string $newKey)
     {
         $configValues = array_map('trim', explode(',', $configValue));
-        foreach($configValues as $index => $configValue) {
+        foreach ($configValues as $index => $configValue) {
             $key = $newKey . ' ' . ($index + 1);
             $result[$key] = $configValue;
         }
