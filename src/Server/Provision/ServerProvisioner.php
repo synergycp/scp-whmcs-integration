@@ -262,7 +262,7 @@ class ServerProvisioner
         $memory = $this->config->getOption('Memory');
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
         $addons = $this->addons($this->multiChoice($choices, '/Add On ([0-9]+)/'));
-        $configAddons = $this->addons($this->getConfigBillingValues(WhmcsConfig::ADDON_BILLING_IDS));
+        $configAddons = $this->addons($this->getConfigBillingValues(WhmcsConfig::ADDON_BILLING_IDS) ?: []);
 
         return [
             'mem_billing' => $memory ?: $this->getConfigBillingValue(WhmcsConfig::MEM_BILLING_ID),
@@ -436,7 +436,7 @@ class ServerProvisioner
      *
      * @return array
      */
-    private function addons(array $addons = null)
+    private function addons(array $addons)
     {
         return array_filter($addons, function ($addOn) {
             switch ($addOn) {
