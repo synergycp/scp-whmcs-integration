@@ -13,16 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
-    - name: Checkout submodules
-      uses: srt32/git-actions@v0.0.3
       with:
-        args: git submodule update --init --recursive
-      
-#     - name: Checkout submodules
-#       uses: textbook/git-checkout-submodule-action@2.1.1
-#       with:
-#         remote: true
+        submodules: true
 
     - name: Validate composer.json and composer.lock
       run: composer validate
