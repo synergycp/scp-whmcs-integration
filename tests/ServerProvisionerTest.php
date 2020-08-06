@@ -174,6 +174,11 @@ class ServerProvisionerTest extends TestCase
                     $opt.WhmcsConfig::IPMI_ACCESS => $accessIpmi = true,
                     $opt.WhmcsConfig::SWITCH_ACCESS => $accessSwitch = true,
                     $opt.WhmcsConfig::PRE_INSTALL => $preInstall = 'test',
+                    $opt.WhmcsConfig::MEM_BILLING_ID => '',
+                    $opt.WhmcsConfig::DISK_BILLING_IDS => '',
+                    $opt.WhmcsConfig::ADDON_BILLING_IDS => '',
+                    $opt.WhmcsConfig::CLIENT_MANAGE_BUTTON => '',
+                    $opt.WhmcsConfig::CLIENT_EMBEDDED_SERVER_MANAGE => '',
                     'clientsdetails' => [
                         'email' => 'zanehoop@gmail.com',
                         'firstname' => 'Zane',
@@ -293,6 +298,11 @@ class ServerProvisionerTest extends TestCase
                     $opt.WhmcsConfig::IPMI_ACCESS => true,
                     $opt.WhmcsConfig::SWITCH_ACCESS => true,
                     $opt.WhmcsConfig::PRE_INSTALL => '',
+                    $opt.WhmcsConfig::MEM_BILLING_ID => '',
+                    $opt.WhmcsConfig::DISK_BILLING_IDS => '',
+                    $opt.WhmcsConfig::ADDON_BILLING_IDS => '',
+                    $opt.WhmcsConfig::CLIENT_MANAGE_BUTTON => '',
+                    $opt.WhmcsConfig::CLIENT_EMBEDDED_SERVER_MANAGE => '',
                     'configoptions' => $configOpts,
                     'clientsdetails' => [
                         'email' => 'zanehoop@gmail.com',

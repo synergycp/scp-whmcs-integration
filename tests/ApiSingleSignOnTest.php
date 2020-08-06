@@ -18,10 +18,10 @@ class ApiSingleSignOnTest extends TestCase
             ->andReturn($key = 'asdf')
             ;
         $api->shouldReceive('url')
-            ->with('sso', [
+            ->with('auth/sso', [
                 'key' => $key,
             ])
-            ->andReturn($url = '/api/sso?key='.$key)
+            ->andReturn($url = '/api/auth/sso?key='.$key)
             ;
         $sso = new ApiSingleSignOn($apiKey, $api);
 
@@ -41,12 +41,12 @@ class ApiSingleSignOnTest extends TestCase
         $server->shouldReceive('getId')
             ->andReturn($serverId = '1');
         $api->shouldReceive('url')
-            ->with('sso', [
+            ->with('auth/sso', [
                 'key' => $key,
                 'view_type' => 'server',
                 'view_id' => $serverId,
             ])
-            ->andReturn($url = '/api/sso?key='.$key)
+            ->andReturn($url = '/api/auth/sso?key='.$key)
             ;
 
         $sso = new ApiSingleSignOn($apiKey, $api);

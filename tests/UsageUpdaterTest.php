@@ -47,6 +47,8 @@ class UsageUpdaterTest
             $usage = new stdClass();
             $usage->used = 600 * 1000;
             $usage->max = 5000 * 1000;
+            $access = new stdClass();
+            $access->is_active = true; // TODO test alternatives
             $server
                 ->shouldReceive('getAttribute')
                 ->with('billing')
@@ -55,6 +57,10 @@ class UsageUpdaterTest
             $server->shouldReceive('getAttribute')
                    ->with('usage')
                    ->andReturn($usage)
+            ;
+            $server->shouldReceive('getAttribute')
+                   ->with('access')
+                   ->andReturn($access)
             ;
 
             $this->format
@@ -77,14 +83,15 @@ class UsageUpdaterTest
             $query
                 ->shouldReceive('where')
                 ->with('id', $billing->id)
-                ->andReturn($query)
+                ->andReturnSelf()
             ;
+            $query->shouldReceive('whereNotIn')->with('domainstatus', ['Terminated'])->andReturnSelf();
             $query
                 ->shouldReceive('update')
                 ->with([
-                    'bwusage' => $usedOutput,
-                    'bwlimit' => $limitOutput,
-                    'lastupdate' => 'now()',
+                  'domainstatus' => 'Active',
+                  'bwusage' => $usedOutput,
+                  'bwlimit' => $limitOutput,
                 ])
                 ->once()
             ;
