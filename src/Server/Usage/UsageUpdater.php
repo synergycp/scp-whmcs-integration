@@ -6,112 +6,114 @@ use Scp\Api\ApiError;
 use Scp\Server\Server;
 use Scp\Server\ServerRepository;
 use Scp\Whmcs\Api;
-use Scp\Whmcs\LogFactory;
 use Scp\Whmcs\Database\Database;
-use Scp\Support\Collection;
+use Scp\Whmcs\LogFactory;
 
-class UsageUpdater
-{
-    /**
-     * @var LogFactory
-     */
-    protected $log;
+class UsageUpdater {
+  /**
+   * @var LogFactory
+   */
+  protected $log;
 
-    /**
-     * @var UsageFormatter
-     */
-    protected $format;
+  /**
+   * @var UsageFormatter
+   */
+  protected $format;
 
-    /**
-     * @var ServerRepository
-     */
-    protected $servers;
+  /**
+   * @var ServerRepository
+   */
+  protected $servers;
 
-    /**
-     * @var Database
-     */
-    protected $database;
+  /**
+   * @var Database
+   */
+  protected $database;
 
-    /**
-     * @var Api
-     */
-    protected $api;
+  /**
+   * @var Api
+   */
+  protected $api;
 
-    public function __construct(
-        Api $api,
-        Database $database,
-        LogFactory $log,
-        UsageFormatter $format,
-        ServerRepository $servers
-    ) {
-        $this->api = $api;
-        $this->log = $log;
-        $this->format = $format;
-        $this->servers = $servers;
-        $this->database = $database;
+  public function __construct(
+    Api $api, Database $database, LogFactory $log, UsageFormatter $format, ServerRepository $servers
+  ) {
+    $this->api = $api;
+    $this->log = $log;
+    $this->format = $format;
+    $this->servers = $servers;
+    $this->database = $database;
+  }
+
+  /**
+   * @return bool
+   */
+  public function runAndLogErrors() {
+    try {
+      $this->run();
+
+      return true;
+    } catch (ApiError $exc) {
+      $this->log->activity(
+        'SynergyCP: Error running usage update: %s',
+        $exc->getMessage()
+      );
     }
 
-    /**
-     * @return bool
-     */
-    public function runAndLogErrors()
-    {
-        try {
-            $this->run();
+    return false;
+  }
 
-            return true;
-        } catch (ApiError $exc) {
-            $this->log->activity(
-                'SynergyCP: Error running usage update: %s',
+  /**
+   * @return bool
+   */
+  public function run() {
+    // Get bandwidth from SynergyCP
+    $fail = false;
+    $this->servers->query()->where('integration_id', 'me')->chunk(
+      100,
+      function ($servers) use (&$fail) {
+        $servers->map(
+          function (Server $server) use (&$fail) {
+            if (!$server->billing) {
+              return;
+            }
+            try {
+              $this->database
+                ->table('tblhosting')
+                ->where('id', $server->billing->id)
+                ->whereNotIn('domainstatus', ['Terminated'])
+                ->update($this->prepareUpdates($server));
+            } catch (\Exception $exc) {
+              $this->log->activity(
+                'SynergyCP: Usage Update failed: %s',
                 $exc->getMessage()
-            );
-        }
+              );
+              $fail = true;
+            }
+          }
+        );
+      }
+    );
 
-        return false;
-    }
+    $this->log->activity('SynergyCP: Completed usage update');
 
-    /**
-     * @return bool
-     * @throws ApiError
-     */
-    public function run()
-    {
-        // Get bandwidth from SynergyCP
-        $fail = false;
-        $this->servers->query()->where('integration_id', 'me')->chunk(100, function ($servers) use (&$fail) {
-            $servers->map(function (Server $server) use (&$fail) {
-                try {
-                    $this->database
-                        ->table('tblhosting')
-                        ->where('id', $server->billing->id)
-                        ->update($this->prepareUpdates($server));
-                } catch (\Exception $exc) {
-                    $this->log->activity(
-                        'SynergyCP: Usage Update failed: %s',
-                        $exc->getMessage()
-                    );
-                    $fail = true;
-                }
-            });
-        });
+    return !$fail;
+  }
 
-        $this->log->activity('SynergyCP: Completed usage update');
+  /**
+   * @param Server $server
+   *
+   * @return array
+   */
+  private function prepareUpdates(Server $server) {
+    $usage = $server->usage;
+    $access = $server->access;
+    $status = $access && $access->is_active ? 'Active' : 'Suspended';
 
-        return !$fail;
-    }
-
-    /**
-     * @param Server $server
-     *
-     * @return array
-     */
-    private function prepareUpdates(Server $server)
-    {
-        $usage = $server->usage;
-        return [
-            'bwusage' => $usage ? $this->format->bitsToMB($usage->used, 3) : 0,
-            'bwlimit' => $usage ? $this->format->bitsToMB($usage->max, 3) : 0,
-            'lastupdate' => 'now()',
-        ];
-    }
+    return [
+      'domainstatus' => $status,
+      'bwusage' => $usage ? $this->format->bitsToMB($usage->used, 3) : 0,
+      'bwlimit' => $usage ? $this->format->bitsToMB($usage->max, 3) : 0,
+    ];
+  }
 }
