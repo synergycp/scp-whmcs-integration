@@ -28,10 +28,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-
 
+    - name: Cache Scp lib Composer packages
+      id: composer-cache-scp
+      uses: actions/cache@v2
+      with:
+        path: Scp/vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Install Scp Lib dependencies
+      if: steps.composer-cache.outputs.cache-hit != 'true'
       run: |
-        composer install --prefer-dist --no-progress --no-suggest
         cd Scp
         composer install --prefer-dist --no-progress --no-suggest
 
