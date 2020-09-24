@@ -317,7 +317,7 @@ class WhmcsEvents
             $this->server->currentBillingId()
         );
 
-        $this->ticket->create([
+        $this->ticket->createAndLogErrors([
             'clientid' => $this->config->get('userid'),
             'subject' => 'Server Termination',
             'message' => $message,
@@ -334,7 +334,7 @@ class WhmcsEvents
             $this->server->currentBillingId()
         );
 
-        $this->ticket->create([
+        $this->ticket->createAndLogErrors([
             'clientid' => $this->config->get('userid'),
             'subject' => 'Server Suspension',
             'message' => $message,
@@ -351,7 +351,7 @@ class WhmcsEvents
             $this->server->currentBillingId()
         );
 
-        $this->ticket->create([
+        $this->ticket->createAndLogErrors([
             'clientid' => $this->config->get('userid'),
             'subject' => 'Pending Server Suspension',
             'message' => $message,
@@ -368,7 +368,7 @@ class WhmcsEvents
             $this->server->currentBillingId()
         );
 
-        $this->ticket->create([
+        $this->ticket->createAndLogErrors([
             'clientid' => $this->config->get('userid'),
             'subject' => 'Pending Server Termination',
             'message' => $message,
