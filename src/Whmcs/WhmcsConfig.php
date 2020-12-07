@@ -84,7 +84,7 @@ class WhmcsConfig
         case static::TICKET_DEPT:
             return (string) $this->getDepartmentIdByName($value);
         case static::DELETE_ACTION:
-            $mapped = array_get($this->deleteActionMap, $value);
+            $mapped = isset($this->deleteActionMap[$value]) ? $this->deleteActionMap[$value] : null;
 
             if ($mapped !== null) {
                 return $mapped;

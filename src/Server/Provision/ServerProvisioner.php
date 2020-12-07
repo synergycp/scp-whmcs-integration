@@ -296,7 +296,7 @@ class ServerProvisioner
             'password' => $password,
             'server' => [
                 'fields' => array_filter([
-                    'pkg.ddos.rate-limit' => array_get($choices, 'DDoS Protection'),
+                    'pkg.ddos.rate-limit' => isset($choices['DDoS Protection']) ? $choices['DDoS Protection'] : null,
                 ]),
             ],
             'billing' => [
