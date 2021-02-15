@@ -1,3 +1,6 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 composer install
+cd Scp
+composer install
+cd ..
