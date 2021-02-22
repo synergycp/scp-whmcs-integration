@@ -1,8 +1,8 @@
 <?php
 
-use Scp\Whmcs\Server\Usage\UsageFormatter;
+namespace Scp\Whmcs\Server\Usage;
 
-class UsageFormatterTest extends TestCase
+class UsageFormatterTest extends \TestCase
 {
     /**
      * @var DataUsageFormatter

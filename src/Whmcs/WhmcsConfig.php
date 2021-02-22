@@ -27,13 +27,15 @@ class WhmcsConfig
     const ADDON_BILLING_IDS = 11;
     const CLIENT_MANAGE_BUTTON = 12;
     const CLIENT_EMBEDDED_SERVER_MANAGE = 13;
+    const IP_GROUP_BILLING_IDS = 14;
+    const SHOULD_SYNC_INVENTORY_COUNT = 15;
 
     /**
      * The 1-based index of the last Config Option.
      *
      * @var int
      */
-    protected $countOptions = self::CLIENT_EMBEDDED_SERVER_MANAGE;
+    protected $countOptions = self::SHOULD_SYNC_INVENTORY_COUNT;
 
     const API_USER_DESC = 'This must be an administrator user with API access enabled.';
     const TICKET_DEPT_DESC = 'When provisioning fails due to low inventory, a ticket will be filed on behalf of the client in this support department.';
@@ -44,6 +46,8 @@ class WhmcsConfig
     const ADDON_BILLING_DESC = 'Optional preset Billing ID of the Addons. Multiple can be separated by commas. This field is overridden when the \'Add On\' Configurable Options are present. ex: add-1, add-2|Addon 1, Addon 2';
     const CLIENT_MANAGE_BUTTON_DESC = 'Adds a Manage on SynergyCP button to client server pages.';
     const CLIENT_EMBEDDED_SERVER_MANAGE_DESC = 'Adds an embedded Manage on SynergyCP iFrame to client server pages. This requires the SynergyCP API to have HTTPS enabled and for WHMCS to be configured to use it.';
+    const IP_GROUP_BILLING_IDS_DESC = 'Optional preset Billing ID of the IP Group. Multiple can be separated by commas. This field is overridden when the \'Datacenter Location\' Configurable Options are present. ex: la-1, la-2|Los Angeles 1, Los Angeles 2';
+    const SHOULD_SYNC_INVENTORY_COUNT_DESC = 'Enable automatic synchronization of WHMCS stock quantity with SynergyCP inventory. Make sure that RAM, hard disk, and IP Group defaults are also configured on this page.';
 
     const DELETE_ACTION_WIPE = 0;
     const DELETE_ACTION_TICKET = 1;
@@ -63,6 +67,11 @@ class WhmcsConfig
      */
     protected $whmcs;
 
+    /**
+     * @var array
+     */
+    private $params;
+
     public function __construct(
         Whmcs $whmcs
     ) {
@@ -71,9 +80,15 @@ class WhmcsConfig
 
     public function get($key)
     {
-        $params = $this->whmcs->getParams();
+        $this->params = $this->params ?: $this->whmcs->getParams();
 
-        return $params[$key];
+        return $this->params[$key];
+    }
+
+    public function setParams(array $params) {
+      $this->params = $params;
+
+      return $this;
     }
 
     public function option($key)
@@ -201,6 +216,18 @@ class WhmcsConfig
                 'Default' => 'yes',
                 'Description' => self::CLIENT_EMBEDDED_SERVER_MANAGE_DESC,
             ];
+        case static::IP_GROUP_BILLING_IDS:
+            return $config['IP Group Billing IDs'] = [
+                'Type' => 'text',
+                'Size' => '100',
+                'Description' => self::IP_GROUP_BILLING_IDS_DESC,
+            ];
+        case static::SHOULD_SYNC_INVENTORY_COUNT:
+            return $config['Automatic Quantity Sync'] = [
+                'Type' => 'yesno',
+                'Default' => 'no',
+                'Description' => self::SHOULD_SYNC_INVENTORY_COUNT_DESC,
+            ];
         }
     }
 
@@ -251,5 +278,111 @@ class WhmcsConfig
         return [
             static::FORM => 'form',
         ];
+    }
+
+    public function configForProduct(\stdClass $product) {
+      $startParams = $this->params;
+      $this->setParams((array)$product);
+
+      $result = [0 => null];
+      for ($i = 1; $i <= $this->countOptions; $i++) {
+        $result[$i] = $this->getConfigBillingValues($i);
+      }
+
+      $this->params = $startParams;
+
+      return $result;
+    }
+
+    /**
+     * @param string $configID
+     *
+     * @return array
+     */
+    public function getConfigBillingValues(string $configID)
+    {
+        $value = $this->getConfigBillingValue($configID);
+        return $value === null ? null : $this->csvToArray($value);
+    }
+
+    /**
+     * @param string $configID
+     *
+     * @return string
+     */
+    public function getConfigBillingValue(string $configID)
+    {
+        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
+            return null;
+        }
+        return trim($delimitedString[0]);
+    }
+
+    /**
+     * @param string $configID
+     * @param string $newKey
+     *
+     * @return array
+     */
+    public function getConfigNames(string $configID, string $newKey)
+    {
+        $name = $this->getConfigName($configID);
+        return $name === null ? null : $this->csvToAssociativeArray($name, $newKey);
+    }
+
+    /**
+     * @param string $configID
+     * @param string $newKey
+     *
+     * @return string
+     */
+    public function getConfigName(string $configID)
+    {
+        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
+            return null;
+        }
+        $untrimmedConfigName = $delimitedString[1] ?: $delimitedString[0];
+        $configName = trim($untrimmedConfigName);
+        return $configName;
+    }
+
+    /**
+     * @param string $configValue
+     *
+     * @return array
+     */
+    private function csvToArray(string $configValue)
+    {
+        $configValues = array_map('trim', explode(',', $configValue));
+        return $configValues;
+    }
+
+    /**
+     * @param string $configValue
+     * @param string $newKey
+     *
+     * @return array
+     */
+    private function csvToAssociativeArray(string $configValue, string $newKey)
+    {
+        $configValues = array_map('trim', explode(',', $configValue));
+        foreach ($configValues as $index => $configValue) {
+            $key = $newKey . ' ' . ($index + 1);
+            $result[$key] = $configValue;
+        }
+        return $result;
+    }
+
+    /**
+     * @param string $configID
+     *
+     * @return array
+     */
+    private function splitStringByDelimiter(string $configID)
+    {
+        if (!$configValues = $this->option($configID)) {
+            return null;
+        }
+        return explode('|', $configValues);
     }
 }

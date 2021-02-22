@@ -250,11 +250,11 @@ class WhmcsEvents
         switch ($act = $this->config->option(WhmcsConfig::DELETE_ACTION)) {
         case WhmcsConfig::DELETE_ACTION_WIPE:
             try {
-                $server = $this->server->currentOrFail();
+                // $server = $this->server->currentOrFail();
 
                 try {
                     // TODO: differentiate between auto and regular suspend.
-                    $server->autoWipe();
+                    // $server->autoWipe();
                     $this->wipeProductDetails();
 
 
@@ -291,20 +291,32 @@ class WhmcsEvents
     protected function wipeProductDetails()
     {
         $serviceId = $this->config->get('serviceid');
-        $updated = $this->database
+        $entry = $this->database
+            ->table('tblhosting')
+            ->select('domain')
+            ->where('id', $serviceId)
+            ->first();
+        $updated = false;
+        if ($entry) {
+          $updated = $this->database
             ->table('tblhosting')
             ->where('id', $serviceId)
             ->update([
-                'domain' => '',
-                'dedicatedip' => '',
-                'assignedips' => '',
+              'dedicatedip' => '',
+              'assignedips' => '',
+              'domain' => static::domainForTerminatedServer($entry->domain),
             ]);
+        }
 
         $this->log->activity(
             '%s service ID: %s during termination',
             $updated ? 'Successfully updated' : 'Failed to update',
             $serviceId
         );
+    }
+
+    public static function domainForTerminatedServer($domain) {
+      return preg_replace('/ ((&lt;)|<).+((&gt;)|>)$/', '', $domain ?: '');
     }
 
     /**

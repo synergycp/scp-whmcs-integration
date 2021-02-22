@@ -23,52 +23,52 @@ class ServerProvisioner
     /**
      * @var string
      */
-    protected $sep = ',';
+    private $sep = ',';
 
     /**
      * @var Whmcs
      */
-    protected $whmcs;
+    private $whmcs;
 
     /**
      * @var ClientService
      */
-    protected $client;
+    private $client;
 
     /**
      * @var TicketManager
      */
-    protected $tickets;
+    private $tickets;
 
     /**
      * @var OriginalServerProvisioner
      */
-    protected $provision;
+    private $provision;
 
     /**
      * @var WhmcsConfig
      */
-    protected $config;
+    private $config;
 
     /**
      * @var Database
      */
-    protected $database;
+    private $database;
 
     /**
      * @var LogFactory
      */
-    protected $log;
+    private $log;
 
     /**
      * @var ServerFieldsService
      */
-    protected $fields;
+    private $fields;
 
     /**
      * @var EntityRepository
      */
-    protected $entities;
+    private $entities;
 
     /**
      * @var int|null
@@ -226,7 +226,12 @@ class ServerProvisioner
      */
     private function ipGroupChoices()
     {
-        return $this->split($this->config->getOption('Datacenter Location'));
+      $choices = $this->split($this->config->getOption('Datacenter Location'));
+      if ($choices && count($choices) > 0) {
+        return $choices;
+      }
+
+      return $this->config->getConfigBillingValues(WhmcsConfig::IP_GROUP_BILLING_IDS);
     }
 
     /**
@@ -262,12 +267,12 @@ class ServerProvisioner
         $memory = $this->config->getOption('Memory');
         $disks = $this->multiChoice($choices, '/Drive Bay ([0-9]+)(.*)/');
         $addons = $this->addons($this->multiChoice($choices, '/Add On ([0-9]+)/'));
-        $configAddons = $this->addons($this->getConfigBillingValues(WhmcsConfig::ADDON_BILLING_IDS) ?: []);
+        $configAddons = $this->addons($this->config->getConfigBillingValues(WhmcsConfig::ADDON_BILLING_IDS) ?: []);
 
         return [
-            'mem_billing' => $memory ?: $this->getConfigBillingValue(WhmcsConfig::MEM_BILLING_ID),
+            'mem_billing' => $memory ?: $this->config->getConfigBillingValue(WhmcsConfig::MEM_BILLING_ID),
             'cpu_billing' => $this->config->option(WhmcsConfig::CPU_BILLING_ID),
-            'disks_billing' => $disks ?: $this->getConfigBillingValues(WhmcsConfig::DISK_BILLING_IDS),
+            'disks_billing' => $disks ?: $this->config->getConfigBillingValues(WhmcsConfig::DISK_BILLING_IDS),
             'addons_billing' => $addons ?: $configAddons,
             'ip_group_billing' => $this->ipGroupChoices(),
         ];
@@ -375,9 +380,9 @@ class ServerProvisioner
         );
 
         $presetConfigOptions = array_filter(array_merge(
-            ['Memory' => $this->getConfigName(WhmcsConfig::MEM_BILLING_ID)],
-            $this->getConfigNames(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay') ?: [],
-            $this->getConfigNames(WhmcsConfig::ADDON_BILLING_IDS, 'Add On') ?: []
+            ['Memory' => $this->config->getConfigName(WhmcsConfig::MEM_BILLING_ID)],
+            $this->config->getConfigNames(WhmcsConfig::DISK_BILLING_IDS, 'Drive Bay') ?: [],
+            $this->config->getConfigNames(WhmcsConfig::ADDON_BILLING_IDS, 'Add On') ?: []
         ));
 
         $configOpts = $this->whmcs->configOptions();
@@ -452,102 +457,5 @@ class ServerProvisioner
 
             return false;
         });
-    }
-
-    /**
-     * @param string $configID
-     *
-     * @return array
-     */
-    private function getConfigBillingValues(string $configID)
-    {
-        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
-            return null;
-        }
-        return $this->csvToArray($delimitedString[0]);
-    }
-
-    /**
-     * @param string $configID
-     *
-     * @return string
-     */
-    private function getConfigBillingValue(string $configID)
-    {
-        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
-            return null;
-        }
-        return trim($delimitedString[0]);
-    }
-
-    /**
-     * @param string $configID
-     * @param string $newKey
-     *
-     * @return array
-     */
-    private function getConfigNames(string $configID, string $newKey)
-    {
-        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
-            return null;
-        }
-        $configName = $delimitedString[1] ?: $delimitedString[0];
-        return $this->csvToAssociativeArray($configName, $newKey);
-    }
-
-    /**
-     * @param string $configID
-     * @param string $newKey
-     *
-     * @return string
-     */
-    private function getConfigName(string $configID)
-    {
-        if (!$delimitedString = $this->splitStringByDelimiter($configID)) {
-            return null;
-        }
-        $untrimmedConfigName = $delimitedString[1] ?: $delimitedString[0];
-        $configName = trim($untrimmedConfigName);
-        return $configName;
-    }
-
-    /**
-     * @param string $configValue
-     *
-     * @return array
-     */
-    private function csvToArray(string $configValue)
-    {
-        $configValues = array_map('trim', explode(',', $configValue));
-        return $configValues;
-    }
-
-    /**
-     * @param string $configValue
-     * @param string $newKey
-     *
-     * @return array
-     */
-    private function csvToAssociativeArray(string $configValue, string $newKey)
-    {
-        $configValues = array_map('trim', explode(',', $configValue));
-        foreach ($configValues as $index => $configValue) {
-            $key = $newKey . ' ' . ($index + 1);
-            $result[$key] = $configValue;
-        }
-        return $result;
-    }
-
-    /**
-     * @param string $configID
-     *
-     * @return array
-     */
-    private function splitStringByDelimiter(string $configID)
-    {
-        if (!$configValues = $this->config->option($configID)) {
-            return null;
-        }
-        return explode('|', $configValues);
     }
 }

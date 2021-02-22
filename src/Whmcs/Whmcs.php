@@ -20,30 +20,32 @@ class Whmcs
     /**
      * @return array
      */
-    public function configOptions()
-    {
-        $params = $this->getParams();
-        $results = [];
+    public function configOptions() {
+      return $this->configOptionsForProductID($this->getParams()['pid']);
+    }
 
-        $query = "SELECT optval.optionname AS val, opt.optionname AS name
-            FROM tblproductconfigoptionssub optval
-            JOIN tblproductconfigoptions opt ON opt.id = optval.configid
-            JOIN tblproductconfiglinks link ON opt.gid = link.gid
-            WHERE link.pid = '$params[pid]'";
-        $query = mysql_query($query);
+    public function configOptionsForProductID($pid) {
+      $pid = (int)$pid;
+      $results = [];
+      $query = "SELECT optval.optionname AS val, opt.optionname AS name
+          FROM tblproductconfigoptionssub optval
+          JOIN tblproductconfigoptions opt ON opt.id = optval.configid
+          JOIN tblproductconfiglinks link ON opt.gid = link.gid
+          WHERE link.pid = '$pid'";
+      $query = \mysql_query($query);
 
-        while ($result = mysql_fetch_array($query)) {
-            $name = $result['name'];
-            list($billingId, $value) = explode('|', $result['val']);
+      while ($result = \mysql_fetch_array($query)) {
+          $name = $result['name'];
+          list($billingId, $value) = explode('|', $result['val']);
 
-            if (!is_array($results[$name])) {
-                $results[$name] = [];
-            }
+          if (!is_array($results[$name])) {
+              $results[$name] = [];
+          }
 
-            $results[$name][$billingId] = $value;
-        }
+          $results[$name][$billingId] = $value;
+      }
 
-        return $results;
+      return $results;
     }
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+namespace Scp\Whmcs\Server\Usage;
+
 use Mockery\MockInterface;
 use Scp\Api\ApiQuery;
 use Scp\Api\ApiResponse;
@@ -9,11 +11,12 @@ use Scp\Support\Collection;
 use Scp\Whmcs\Api;
 use Scp\Whmcs\Database\Database;
 use Scp\Whmcs\LogFactory;
-use Scp\Whmcs\Server\Usage\UsageFormatter;
-use Scp\Whmcs\Server\Usage\UsageUpdater;
+use Mockery;
+use Scp\Whmcs\Server\Inventory\InventorySynchronizer;
+use stdClass;
 
 class UsageUpdaterTest
-    extends TestCase
+    extends \TestCase
 {
     public function setUp(): void
     {
@@ -22,9 +25,11 @@ class UsageUpdaterTest
             $this->database = Mockery::mock(Database::class),
             $this->log = Mockery::mock(LogFactory::class),
             $this->format = Mockery::mock(UsageFormatter::class),
-            $servers = Mockery::mock(ServerRepository::class)
+            $servers = Mockery::mock(ServerRepository::class),
+            $inventory = Mockery::mock(InventorySynchronizer::class)
         );
 
+        $inventory->shouldReceive('sync');
         $this->response = Mockery::mock(ApiResponse::class);
         $this->query = Mockery::mock(ApiQuery::class);
         $servers

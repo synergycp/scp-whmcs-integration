@@ -35,13 +35,15 @@ class ServerProvisionerTest extends TestCase
             $this->whmcs = Mockery::mock(Whmcs::class),
             $this->database = Mockery::mock(Database::class),
             $this->log = Mockery::mock(LogFactory::class),
-            $this->config = Mockery::mock(WhmcsConfig::class),
+            $this->config = new WhmcsConfig($this->whmcs),
             $this->clients = Mockery::mock(ClientService::class),
             $this->tickets = Mockery::mock(TicketManager::class),
             $this->entities = Mockery::mock(EntityRepository::class),
             $this->fields = Mockery::mock(ServerFieldsService::class),
             $this->orig = Mockery::mock(OriginalServerProvisioner::class)
         );
+
+        // $this->whmcs->shouldReceive('getParams')->andReturn([]);
     }
 
     /**
@@ -179,6 +181,8 @@ class ServerProvisionerTest extends TestCase
                     $opt.WhmcsConfig::ADDON_BILLING_IDS => '',
                     $opt.WhmcsConfig::CLIENT_MANAGE_BUTTON => '',
                     $opt.WhmcsConfig::CLIENT_EMBEDDED_SERVER_MANAGE => '',
+                    $opt.WhmcsConfig::IP_GROUP_BILLING_IDS => '',
+                    $opt.WhmcsConfig::SHOULD_SYNC_INVENTORY_COUNT => false,
                     'clientsdetails' => [
                         'email' => 'zanehoop@gmail.com',
                         'firstname' => 'Zane',
@@ -358,26 +362,9 @@ $bandwidthLabel: $bandwidthName
 
     private function setupConfig(array $config, array $params)
     {
-        $this->config
-            ->shouldReceive('options')
-            ->andReturn($config);
-
-        foreach ($config as $key => $value) {
-            $this->config
-                ->shouldReceive('getOption')
-                ->with($key)
-                ->andReturn($value);
-        }
-        $this->config->shouldReceive('get')
-            ->andReturnUsing(function ($key) use (&$params) {
-                return $params[$key];
-            });
-        $this->config->shouldReceive('option')
-            ->andReturnUsing(function ($key) use (&$params) {
-                return $params['configoption'.$key];
-            });
-        $this->whmcs->shouldReceive('getParams')
-            ->andReturn($params);
+      $params['configoptions'] = $config;
+      $this->whmcs->shouldReceive('getParams')->andReturn($params);
+      $this->config->setParams($params);
     }
 
     private function mockEntityQuery(array $config, $return)

@@ -8,41 +8,54 @@ use Scp\Server\ServerRepository;
 use Scp\Whmcs\Api;
 use Scp\Whmcs\Database\Database;
 use Scp\Whmcs\LogFactory;
+use Scp\Whmcs\Server\Inventory\InventorySynchronizer;
 
+/**
+ * Testing the UsageUpdater:
+ * 
+ * ssh whmcstes@scp-whmcs /opt/cpanel/ea-php72/root/usr/bin/php /home/whmcstes/public_html/crons/cron.php do --UpdateServerUsage -vvv
+ */
 class UsageUpdater {
   /**
    * @var LogFactory
    */
-  protected $log;
+  private $log;
 
   /**
    * @var UsageFormatter
    */
-  protected $format;
+  private $format;
 
   /**
    * @var ServerRepository
    */
-  protected $servers;
+  private $servers;
 
   /**
    * @var Database
    */
-  protected $database;
+  private $database;
 
   /**
    * @var Api
    */
-  protected $api;
+  private $api;
+
+  /**
+   * @var InventorySynchronizer
+   */
+  private $inventory;
 
   public function __construct(
-    Api $api, Database $database, LogFactory $log, UsageFormatter $format, ServerRepository $servers
+    Api $api, Database $database, LogFactory $log, UsageFormatter $format, ServerRepository $servers,
+    InventorySynchronizer $inventory
   ) {
     $this->api = $api;
     $this->log = $log;
     $this->format = $format;
     $this->servers = $servers;
     $this->database = $database;
+    $this->inventory = $inventory;
   }
 
   /**
@@ -67,7 +80,15 @@ class UsageUpdater {
    * @return bool
    */
   public function run() {
-    // Get bandwidth from SynergyCP
+    $fail = $this->syncBandwidthUsage();
+    $fail = $this->inventory->sync() || $fail;
+
+    $this->log->activity('SynergyCP: Completed usage update');
+
+    return !$fail;
+  }
+
+  private function syncBandwidthUsage() {
     $fail = false;
     $this->servers->query()->where('integration_id', 'me')->chunk(
       100,
@@ -95,9 +116,7 @@ class UsageUpdater {
       }
     );
 
-    $this->log->activity('SynergyCP: Completed usage update');
-
-    return !$fail;
+    return $fail;
   }
 
   /**
