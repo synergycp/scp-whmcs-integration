@@ -250,11 +250,11 @@ class WhmcsEvents
         switch ($act = $this->config->option(WhmcsConfig::DELETE_ACTION)) {
         case WhmcsConfig::DELETE_ACTION_WIPE:
             try {
-                // $server = $this->server->currentOrFail();
+                $server = $this->server->currentOrFail();
 
                 try {
                     // TODO: differentiate between auto and regular suspend.
-                    // $server->autoWipe();
+                    $server->autoWipe();
                     $this->wipeProductDetails();
 
 
