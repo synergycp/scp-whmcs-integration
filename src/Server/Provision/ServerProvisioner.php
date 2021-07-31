@@ -134,12 +134,19 @@ class ServerProvisioner
         $osChoice = array_shift($osChoices);
 
         $password = $params['password'];
+        $filters = $this->getFilters();
+        $client = $this->client->getOrCreate();
 
-        $server = $this->provision->server(
-            $this->getFilters(),
-            $this->getServerSettings($osChoice, $password),
-            $this->client->getOrCreate()
-        );
+        try {
+            $server = $this->provision->server(
+                $filters,
+                $this->getServerSettings($osChoice, $password),
+                $client
+            );
+        } catch (\Scp\Api\ApiResponseError $exc) {
+            $this->log->activity('Failed to provision server with filters: %s', json_encode($filters));
+            throw $exc;
+        }
 
         if (!$server) {
             $this->createTicket($params);
