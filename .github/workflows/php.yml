@@ -48,4 +48,7 @@ jobs:
         composer install --prefer-dist --no-progress --no-suggest
 
     - name: Run test suite
+      uses: php-actions/composer@v6
       run: composer run-script test
+      with:
+        php_version: 7.1
