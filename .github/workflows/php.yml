@@ -49,6 +49,6 @@ jobs:
 
     - name: Run test suite
       uses: php-actions/composer@v6
-      run: composer run-script test
       with:
         php_version: 7.1
+        command: composer run-script test
