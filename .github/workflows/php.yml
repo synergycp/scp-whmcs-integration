@@ -51,4 +51,4 @@ jobs:
       uses: php-actions/composer@v6
       with:
         php_version: 7.1
-        command: composer run-script test
+        command: run-script test
