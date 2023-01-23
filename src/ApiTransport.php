@@ -37,7 +37,7 @@ class ApiTransport extends OriginalApiTransport
             $postData = var_export($postData, true);
         }
         $data = 'HTTP ' . $method . ' ' . $url . "\n"
-            . implode($headers, "\n") . "\n\n"
+            . implode("\n", $headers) . "\n\n"
             . $postData;
 
         $raw = $response->raw();
