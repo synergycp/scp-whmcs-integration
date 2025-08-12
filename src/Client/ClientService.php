@@ -98,6 +98,7 @@ class ClientService
             'first' => $params['clientsdetails']['firstname'],
             'last' => $params['clientsdetails']['lastname'],
             'billing_id' => $params['userid'],
+            'password' => "" // doesn't actually permit login without a password
         ]);
     }
 
