@@ -78,6 +78,7 @@ class ClientServiceTest extends TestCase
                 'first' => $firstName,
                 'last' => $lastName,
                 'billing_id' => $billingId,
+                'password' => ''
             ])
             ->andReturn($client);
 
