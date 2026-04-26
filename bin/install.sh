@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-composer install
+composer install --no-dev
 cd Scp
-composer install
+composer install --no-dev
 cd ..
