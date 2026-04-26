@@ -52,3 +52,46 @@ jobs:
       with:
         php_version: 7.2
         command: run-script test
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Make scripts executable
+      run: chmod +x bin/export.sh bin/docker-exec
+
+    - name: Build and upload distribution zip to R2
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      run: ./bin/export.sh
+
+    - name: Notify Slack on success
+      if: success()
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ *scp-whmcs-integration* distribution zip uploaded to R2\nCommit: `${{ github.sha }}`\nBranch: `${{ github.ref_name }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"}' \
+            "$SLACK_WEBHOOK_URL"
+        fi
+
+    - name: Notify Slack on failure
+      if: failure()
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ *scp-whmcs-integration* distribution upload failed\nCommit: `${{ github.sha }}`\nBranch: `${{ github.ref_name }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"}' \
+            "$SLACK_WEBHOOK_URL"
+        fi
