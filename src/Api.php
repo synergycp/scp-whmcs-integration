@@ -29,26 +29,48 @@ class Api
 
         $params = $whmcs->getParams();
         $apiKey = Arr::get($params, 'serveraccesshash');
-        $hostname = Arr::get($params, 'serverhostname');
-        $parsed = parse_url($hostname);
+        $hostname = (string) Arr::get($params, 'serverhostname', '');
+        $url = $hostname === '' ? '' : static::urlFromHostname(
+            $hostname,
+            Arr::get($params, 'serversecure', false) ? 'https' : 'http'
+        );
+
+        parent::__construct($url, $apiKey);
+
+        $this->setTransport($transport);
+    }
+
+    /**
+     * Build the API base URL from the WHMCS server hostname field, which may
+     * be a bare host, a host with a path, or a full URL.
+     *
+     * @param string $hostname
+     * @param string $defaultScheme used when the hostname has no scheme
+     *
+     * @return string
+     */
+    public static function urlFromHostname($hostname, $defaultScheme)
+    {
+        // A bare hostname parses as a path, so give it a scheme first.
+        if (strpos($hostname, '://') === false) {
+            $hostname = $defaultScheme . '://' . $hostname;
+        }
+
+        $parsed = parse_url($hostname) ?: [];
         $path = Arr::get($parsed, 'path', '');
         $host = Arr::get($parsed, 'host', '');
-        $default_scheme = Arr::get($params, 'serversecure', false) ? 'https' : 'http';
-        $scheme = Arr::get($parsed, 'scheme', $default_scheme);
+        $scheme = Arr::get($parsed, 'scheme', $defaultScheme);
 
-        if ($path) {
-            $path = trim($path, '/') . '/';
+        $path = trim($path, '/');
+        if ($path !== '') {
+            $path .= '/';
         }
 
         if ($host) {
             $host .= '/';
         }
 
-        $url = sprintf('%s://%s%s', $scheme, $host, $path);
-
-        parent::__construct($url, $apiKey);
-
-        $this->setTransport($transport);
+        return sprintf('%s://%s%s', $scheme, $host, $path);
     }
 
     public function call($method, $path, array $data = [])
