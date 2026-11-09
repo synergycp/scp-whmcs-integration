@@ -1,5 +1,7 @@
 <?php
 
+use Scp\Whmcs\App;
+
 class AppTest extends TestCase
 {
     public function testGet()
@@ -8,6 +10,26 @@ class AppTest extends TestCase
         $app2 = $this->app();
 
         $this->assertEquals($app, $app2);
+    }
+
+    public function testGetRebuildsForDifferentParams()
+    {
+        $app = App::get(['serviceid' => 1]);
+
+        $this->assertSame($app, App::get(['serviceid' => 1]));
+
+        $other = App::get(['serviceid' => 2]);
+        $this->assertNotSame($app, $other);
+        $this->assertSame(['serviceid' => 2], $other->getParams());
+        $this->assertSame($other, App::get(['serviceid' => 2]));
+    }
+
+    public function testGetWithoutParamsReturnsCurrentInstance()
+    {
+        $app = App::get(['serviceid' => 3]);
+
+        $this->assertSame($app, App::get());
+        $this->assertSame(['serviceid' => 3], App::get()->getParams());
     }
 
     public function testInstance()
