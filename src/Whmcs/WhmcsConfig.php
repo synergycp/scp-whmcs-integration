@@ -82,7 +82,19 @@ class WhmcsConfig
     {
         $this->params = $this->params ?: $this->whmcs->getParams();
 
-        return $this->params[$key];
+        return isset($this->params[$key]) ? $this->params[$key] : null;
+    }
+
+    /**
+     * Raw value of a config option as stored by WHMCS, without any mapping.
+     *
+     * @param int $key
+     *
+     * @return string|null
+     */
+    public function rawOption($key)
+    {
+        return $this->get('configoption'.$key);
     }
 
     public function setParams(array $params) {
@@ -116,7 +128,7 @@ class WhmcsConfig
 
     public function options()
     {
-        return $this->get('configoptions');
+        return $this->get('configoptions') ?: [];
     }
 
     /**
@@ -124,7 +136,9 @@ class WhmcsConfig
      */
     public function getOption($option)
     {
-        return $this->options()[$option];
+        $options = $this->options();
+
+        return isset($options[$option]) ? $options[$option] : null;
     }
 
     public function form()
@@ -380,7 +394,7 @@ class WhmcsConfig
      */
     private function splitStringByDelimiter(string $configID)
     {
-        if (!$configValues = $this->option($configID)) {
+        if (!$configValues = $this->rawOption($configID)) {
             return null;
         }
         return explode('|', $configValues);

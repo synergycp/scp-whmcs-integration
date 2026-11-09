@@ -2,6 +2,8 @@
 
 namespace Scp\Whmcs\Server\Usage;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+
 use Mockery\MockInterface;
 use Scp\Api\ApiQuery;
 use Scp\Api\ApiResponse;
@@ -44,16 +46,49 @@ class UsageUpdaterTest
         ;
     }
 
-    public function testRun()
+    public function testRunAndLogErrorsReportsAnyFailure()
     {
-        $items = array_map(function (MockInterface $server) {
+        $this->query->shouldReceive('chunk')->andThrow(new \RuntimeException('database unavailable'));
+        $this->log
+            ->shouldReceive('activity')
+            ->once()
+            ->with('SynergyCP: Error running usage update: %s', 'database unavailable')
+        ;
+
+        $this->assertFalse($this->updater->runAndLogErrors());
+    }
+
+    #[DataProvider('dataStatus')]
+    public function testRun($isActive, $expectedStatus)
+    {
+        $query = Mockery::mock(Illuminate\Database\Query\Builder::class);
+        $this->database
+            ->shouldReceive('table')
+            ->with('tblhosting')
+            ->andReturn($query)
+        ;
+        $query->shouldReceive('where')->with('id', 2)->andReturnSelf();
+        $query->shouldReceive('whereNotIn')->with('domainstatus', ['Terminated'])->andReturnSelf();
+        $query->shouldReceive('whereIn')->with('domainstatus', ['Active', 'Suspended'])->andReturnSelf();
+        $query
+            ->shouldReceive('update')
+            ->with(['bwusage' => 1000, 'bwlimit' => 800])
+            ->twice()
+        ;
+        $query
+            ->shouldReceive('update')
+            ->with(['domainstatus' => $expectedStatus])
+            ->twice()
+        ;
+
+        $items = array_map(function (MockInterface $server) use ($isActive) {
             $billing = new stdClass();
             $billing->id = 2;
             $usage = new stdClass();
             $usage->used = 600 * 1000;
             $usage->max = 5000 * 1000;
             $access = new stdClass();
-            $access->is_active = true; // TODO test alternatives
+            $access->is_active = $isActive;
             $server
                 ->shouldReceive('getAttribute')
                 ->with('billing')
@@ -71,34 +106,12 @@ class UsageUpdaterTest
             $this->format
                 ->shouldReceive('bitsToMB')
                 ->with($usage->used, 3)
-                ->andReturn($usedOutput = 1000)
+                ->andReturn(1000)
             ;
             $this->format
                 ->shouldReceive('bitsToMB')
                 ->with($usage->max, 3)
-                ->andReturn($limitOutput = 800)
-            ;
-
-            $query = Mockery::mock(Illuminate\Database\Query\Builder::class);
-            $this->database
-                ->shouldReceive('table')
-                ->with('tblhosting')
-                ->andReturn($query)
-            ;
-            $query
-                ->shouldReceive('where')
-                ->with('id', $billing->id)
-                ->andReturnSelf()
-            ;
-            $query->shouldReceive('whereNotIn')->with('domainstatus', ['Terminated'])->andReturnSelf();
-            $query
-                ->shouldReceive('update')
-                ->with([
-                  'domainstatus' => 'Active',
-                  'bwusage' => $usedOutput,
-                  'bwlimit' => $limitOutput,
-                ])
-                ->once()
+                ->andReturn(800)
             ;
 
             return $server;
@@ -122,5 +135,13 @@ class UsageUpdaterTest
         ;
 
         $this->updater->run();
+    }
+
+    public static function dataStatus()
+    {
+        return [
+            'active access' => [true, 'Active'],
+            'inactive access' => [false, 'Suspended'],
+        ];
     }
 }
