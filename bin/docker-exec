@@ -10,4 +10,11 @@ if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
   docker build -q -t "$IMAGE" -f "$BIN_DIR/Dockerfile" "$BIN_DIR" >/dev/null
 fi
 
-exec docker run --rm -v "$ROOT_DIR":/app -w /app "$IMAGE" "$@"
+# Run as the invoking user so files written into the mounted checkout
+# (vendor/, the zip) are owned by the host user and the mount is writable
+# regardless of the uid baked into the image.
+exec docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/tmp \
+  -e COMPOSER_HOME=/tmp/composer \
+  -v "$ROOT_DIR":/app -w /app "$IMAGE" "$@"
