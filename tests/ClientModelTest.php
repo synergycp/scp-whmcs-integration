@@ -1,5 +1,7 @@
 <?php
 
+use PHPUnit\Framework\Attributes\DataProvider;
+
 use Scp\Client\Client;
 use Scp\Api\Api;
 use Scp\Api\ApiResponse;
@@ -22,13 +24,13 @@ class ClientModelTest extends TestCase
         $this->response = Mockery::mock(ApiResponse::class);
     }
 
-    /**
+/**
      * @param array $info
      *
      * @param array $expectedInfo
      *
-     * @dataProvider dataCreate
      */
+    #[DataProvider('dataCreate')]
     public function testCreate(array $info, array $expectedInfo)
     {
         $this->response
@@ -46,7 +48,7 @@ class ClientModelTest extends TestCase
         $this->assertEquals($client->id, $clientId);
     }
 
-    public function dataCreate()
+    public static function dataCreate()
     {
         return [
             [

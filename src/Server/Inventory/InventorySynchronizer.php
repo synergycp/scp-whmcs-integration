@@ -3,6 +3,7 @@
 namespace Scp\Whmcs\Server\Inventory;
 
 use Scp\Server\ServerRepository;
+use Scp\Whmcs\LogFactory;
 use Scp\Whmcs\Database\Database;
 use Scp\Whmcs\Whmcs\Whmcs;
 use Scp\Whmcs\Whmcs\WhmcsConfig;
@@ -28,6 +29,11 @@ class InventorySynchronizer {
    */
   private $config;
 
+  /**
+   * @var LogFactory
+   */
+  private $log;
+
   const REQUIRED_PRODUCT_FIELDS = [
     WhmcsConfig::MEM_BILLING_ID,
     WhmcsConfig::CPU_BILLING_ID,
@@ -35,24 +41,39 @@ class InventorySynchronizer {
     WhmcsConfig::IP_GROUP_BILLING_IDS,
   ];
 
-  public function __construct(Whmcs $whmcs, ServerRepository $servers, Database $database, WhmcsConfig $config) {
+  public function __construct(
+    Whmcs $whmcs, ServerRepository $servers, Database $database, WhmcsConfig $config, LogFactory $log
+  ) {
     $this->database = $database;
     $this->whmcs = $whmcs;
     $this->servers = $servers;
     $this->config = $config;
+    $this->log = $log;
   }
 
+  /**
+   * @return bool true if any product failed to sync
+   */
   public function sync() {
     if (!$this->shouldSync()) {
       return false;
     }
 
-    
-    $this->getProductConfigs()->each(function ($productConfig) {
-      $this->syncProductConfig($productConfig);
+    $fail = false;
+    $this->getProductConfigs()->each(function ($productConfig) use (&$fail) {
+      try {
+        $this->syncProductConfig($productConfig);
+      } catch (\Exception $exc) {
+        $this->log->activity(
+          'SynergyCP: Inventory sync failed for product ID %s: %s',
+          $productConfig['pid'],
+          $exc->getMessage()
+        );
+        $fail = true;
+      }
     });
 
-    return false;
+    return $fail;
   }
 
   private function syncProductConfig($productConfig) {
@@ -90,12 +111,22 @@ class InventorySynchronizer {
 
   private function getProductConfigs() {
     return $this->database->table('tblproducts')->where('servertype', 'synergycp')->get()->map(function ($product) {
-      return array_merge(
-        ['pid' => $product->id],
-        $this->config->configForProduct($product)
-      );
+      try {
+        return array_merge(
+          ['pid' => $product->id],
+          $this->config->configForProduct($product)
+        );
+      } catch (\Exception $exc) {
+        $this->log->activity(
+          'SynergyCP: Skipping inventory sync for product ID %s: %s',
+          $product->id,
+          $exc->getMessage()
+        );
+
+        return null;
+      }
     })->filter(function ($productConfig) {
-      return $productConfig[WhmcsConfig::SHOULD_SYNC_INVENTORY_COUNT];
+      return $productConfig && !empty($productConfig[WhmcsConfig::SHOULD_SYNC_INVENTORY_COUNT]);
     });
   }
 

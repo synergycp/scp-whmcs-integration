@@ -2,7 +2,6 @@
 
 namespace Scp\Whmcs\Server\Usage;
 
-use Scp\Api\ApiError;
 use Scp\Server\Server;
 use Scp\Server\ServerRepository;
 use Scp\Whmcs\Api;
@@ -11,9 +10,10 @@ use Scp\Whmcs\LogFactory;
 use Scp\Whmcs\Server\Inventory\InventorySynchronizer;
 
 /**
- * Testing the UsageUpdater:
- * 
- * ssh whmcstes@scp-whmcs /opt/cpanel/ea-php72/root/usr/bin/php /home/whmcstes/public_html/crons/cron.php do --UpdateServerUsage -vvv
+ * Syncs bandwidth usage and server state from SynergyCP into WHMCS.
+ *
+ * To exercise this manually, run the WHMCS cron task from the WHMCS root:
+ *   php crons/cron.php do --UpdateServerUsage -vvv
  */
 class UsageUpdater {
   /**
@@ -66,7 +66,7 @@ class UsageUpdater {
       $this->run();
 
       return true;
-    } catch (ApiError $exc) {
+    } catch (\Exception $exc) {
       $this->log->activity(
         'SynergyCP: Error running usage update: %s',
         $exc->getMessage()
@@ -99,11 +99,7 @@ class UsageUpdater {
               return;
             }
             try {
-              $this->database
-                ->table('tblhosting')
-                ->where('id', $server->billing->id)
-                ->whereNotIn('domainstatus', ['Terminated'])
-                ->update($this->prepareUpdates($server));
+              $this->updateService($server);
             } catch (\Exception $exc) {
               $this->log->activity(
                 'SynergyCP: Usage Update failed: %s',
@@ -120,19 +116,50 @@ class UsageUpdater {
   }
 
   /**
+   * Write bandwidth usage for any live service, but only toggle the status of
+   * services WHMCS already considers Active or Suspended. Pending, Cancelled,
+   * Fraud and similar statuses are owned by WHMCS and left untouched.
+   *
+   * @param Server $server
+   */
+  private function updateService(Server $server) {
+    $serviceId = $server->billing->id;
+
+    $this->database
+      ->table('tblhosting')
+      ->where('id', $serviceId)
+      ->whereNotIn('domainstatus', ['Terminated'])
+      ->update($this->prepareUsageUpdates($server));
+
+    $this->database
+      ->table('tblhosting')
+      ->where('id', $serviceId)
+      ->whereIn('domainstatus', ['Active', 'Suspended'])
+      ->update(['domainstatus' => $this->statusFor($server)]);
+  }
+
+  /**
    * @param Server $server
    *
    * @return array
    */
-  private function prepareUpdates(Server $server) {
+  private function prepareUsageUpdates(Server $server) {
     $usage = $server->usage;
-    $access = $server->access;
-    $status = $access && $access->is_active ? 'Active' : 'Suspended';
 
     return [
-      'domainstatus' => $status,
       'bwusage' => $usage ? $this->format->bitsToMB($usage->used, 3) : 0,
       'bwlimit' => $usage ? $this->format->bitsToMB($usage->max, 3) : 0,
     ];
+  }
+
+  /**
+   * @param Server $server
+   *
+   * @return string
+   */
+  private function statusFor(Server $server) {
+    $access = $server->access;
+
+    return $access && $access->is_active ? 'Active' : 'Suspended';
   }
 }

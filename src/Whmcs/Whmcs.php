@@ -1,6 +1,8 @@
 <?php
 
 namespace Scp\Whmcs\Whmcs;
+
+use Illuminate\Database\Capsule\Manager as Capsule;
 use Scp\Support\Arr;
 
 class Whmcs
@@ -25,20 +27,37 @@ class Whmcs
     }
 
     public function configOptionsForProductID($pid) {
-      $pid = (int)$pid;
+      $rows = Capsule::table('tblproductconfigoptionssub as optval')
+          ->join('tblproductconfigoptions as opt', 'opt.id', '=', 'optval.configid')
+          ->join('tblproductconfiglinks as link', 'opt.gid', '=', 'link.gid')
+          ->where('link.pid', (int) $pid)
+          ->select('optval.optionname as val', 'opt.optionname as name')
+          ->get();
+
+      return static::parseConfigOptionRows($rows);
+    }
+
+    /**
+     * Group configurable option rows by option name, keyed by billing ID.
+     *
+     * Each row has a `name` (the option name) and a `val` in the
+     * "billing-id|Display Name" format. Rows without a display name use the
+     * billing ID for both.
+     *
+     * @param iterable $rows objects with `name` and `val` properties
+     *
+     * @return array
+     */
+    public static function parseConfigOptionRows($rows) {
       $results = [];
-      $query = "SELECT optval.optionname AS val, opt.optionname AS name
-          FROM tblproductconfigoptionssub optval
-          JOIN tblproductconfigoptions opt ON opt.id = optval.configid
-          JOIN tblproductconfiglinks link ON opt.gid = link.gid
-          WHERE link.pid = '$pid'";
-      $query = \mysql_query($query);
 
-      while ($result = \mysql_fetch_array($query)) {
-          $name = $result['name'];
-          list($billingId, $value) = explode('|', $result['val']);
+      foreach ($rows as $row) {
+          $name = $row->name;
+          $parts = explode('|', $row->val, 2);
+          $billingId = trim($parts[0]);
+          $value = isset($parts[1]) ? trim($parts[1]) : $billingId;
 
-          if (!is_array($results[$name])) {
+          if (!isset($results[$name])) {
               $results[$name] = [];
           }
 

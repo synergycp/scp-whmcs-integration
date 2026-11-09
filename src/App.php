@@ -270,7 +270,7 @@ class App
     {
         $dependencies = [];
         foreach ($parameters as $parameter) {
-            $dependency = $parameter->getClass();
+            $dependency = $this->parameterClassName($parameter);
             // If the class is null, it means the dependency is a string or some other
             // primitive type which we can not resolve since it is not a class and
             // we will just bomb out with an error since we have no-where to go.
@@ -315,7 +315,7 @@ class App
     protected function resolveClass(\ReflectionParameter $parameter)
     {
         try {
-            return $this->make($parameter->getClass()->name);
+            return $this->make($this->parameterClassName($parameter));
         }
         // If we can not resolve the class instance, we will check to see if the value
         // is optional, and if it is we will return the optional parameter value as
@@ -379,11 +379,37 @@ class App
         if (array_key_exists($parameter->name, $parameters)) {
             $dependencies[] = $parameters[$parameter->name];
             unset($parameters[$parameter->name]);
-        } elseif ($parameter->getClass()) {
-            $dependencies[] = $this->make($parameter->getClass()->name);
+        } elseif ($class = $this->parameterClassName($parameter)) {
+            $dependencies[] = $this->make($class);
         } elseif ($parameter->isDefaultValueAvailable()) {
             $dependencies[] = $parameter->getDefaultValue();
         }
+    }
+
+    /**
+     * Class name a constructor parameter is type-hinted with, or null for
+     * untyped and builtin parameters.
+     *
+     * @param \ReflectionParameter $parameter
+     *
+     * @return string|null
+     */
+    protected function parameterClassName(\ReflectionParameter $parameter)
+    {
+        $type = $parameter->getType();
+
+        if (!$type instanceof \ReflectionNamedType || $type->isBuiltin()) {
+            return null;
+        }
+
+        $name = $type->getName();
+        $class = $parameter->getDeclaringClass();
+
+        if ($class && $name === 'self') {
+            return $class->getName();
+        }
+
+        return $name;
     }
 
     /**
@@ -393,8 +419,16 @@ class App
      */
     public static function get(array $params = [])
     {
-        return static::$selfInstance = static::$selfInstance
-            ? static::$selfInstance->setParams($params)
-            : new static($params);
+        $current = static::$selfInstance;
+
+        // Reuse the container only for the same set of WHMCS params. Cached
+        // services (API credentials, resolved client) are tied to the params
+        // they were built with, so a different service or server gets a fresh
+        // container instead of inheriting stale state.
+        if ($current && (empty($params) || $current->getParams() === $params)) {
+            return $current;
+        }
+
+        return static::$selfInstance = new static($params);
     }
 }

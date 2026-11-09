@@ -123,12 +123,11 @@ class ServerProvisioner
             return;
         }
 
-        $choices = $this->config->options();
         $osChoicesString = sprintf(
             '%s%s%s',
             $this->config->option(WhmcsConfig::PRE_INSTALL),
             $this->sep,
-            $choices['Operating System']
+            $this->config->getOption('Operating System')
         );
         $osChoices = $this->split($osChoicesString);
         $osChoice = array_shift($osChoices);
@@ -297,7 +296,7 @@ class ServerProvisioner
         $choices = $this->config->options();
         $params = $this->whmcs->getParams();
 
-        $portSpeed = $choices['Network Port Speed'];
+        $portSpeed = $this->config->getOption('Network Port Speed');
         $nickname = $params['domain'];
 
         return [
@@ -313,7 +312,7 @@ class ServerProvisioner
             ],
             'billing' => [
                 'id' => $this->config->get('serviceid'),
-                'max_bandwidth' => $choices['Bandwidth'],
+                'max_bandwidth' => $this->config->getOption('Bandwidth'),
             ],
             'access' => [
                 'pxe' => $this->config->option(WhmcsConfig::PXE_ACCESS),
@@ -381,9 +380,8 @@ class ServerProvisioner
         );
 
         $message .= sprintf(
-            "Hostname: %s\nRoot Password: %s\n",
-            $params['domain'],
-            $params['password']
+            "Hostname: %s\n",
+            $params['domain']
         );
 
         $presetConfigOptions = array_filter(array_merge(

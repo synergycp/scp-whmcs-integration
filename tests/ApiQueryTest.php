@@ -1,5 +1,7 @@
 <?php
 
+use PHPUnit\Framework\Attributes\DataProvider;
+
 use Mockery\MockInterface;
 use Scp\Api\Api;
 use Scp\Api\ApiResponse;
@@ -23,12 +25,12 @@ class ApiQueryTest extends TestCase
         $this->response = Mockery::mock(ApiResponse::class);
     }
 
-    /**
+/**
      * @param array $where
      * @param array $expectedFilters
      *
-     * @dataProvider dataFilters
      */
+    #[DataProvider('dataFilters')]
     public function testFilters(array $where, array $expectedFilters)
     {
         $this->api
@@ -57,7 +59,7 @@ class ApiQueryTest extends TestCase
         $this->assertEmpty($query->get($perPage)->items());
     }
 
-    public function dataFilters()
+    public static function dataFilters()
     {
         return [
             [

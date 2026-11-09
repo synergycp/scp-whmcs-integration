@@ -1,5 +1,7 @@
 <?php
 
+use PHPUnit\Framework\Attributes\DataProvider;
+
 use Scp\Api\ApiQuery;
 use Scp\Api\Pagination\ApiPaginator;
 use Scp\Entity\EntityRepository;
@@ -46,15 +48,15 @@ class ServerProvisionerTest extends TestCase
         // $this->whmcs->shouldReceive('getParams')->andReturn([]);
     }
 
-    /**
+/**
      * @param array $config
      * @param array $params
      * @param array $serverFilter
      * @param array $serverInfo
      * @param array $extraInstalls
      *
-     * @dataProvider dataProvision
      */
+    #[DataProvider('dataProvision')]
     public function testProvision(array $config, array $params, array $serverFilter, array $serverInfo, array $extraInstalls)
     {
         $this->setupConfig($config, $params);
@@ -157,7 +159,7 @@ class ServerProvisionerTest extends TestCase
         $this->assertEquals(true, true);
     }
 
-    public function dataProvision()
+    public static function dataProvision()
     {
         $opt = 'configoption';
 
@@ -232,7 +234,7 @@ class ServerProvisionerTest extends TestCase
         ];
     }
 
-    /**
+/**
      * @param string $productName
      * @param array  $config
      * @param array  $params
@@ -240,8 +242,8 @@ class ServerProvisionerTest extends TestCase
      *
      * @param array $ticketInfo
      *
-     * @dataProvider dataProvisionTicket
      */
+    #[DataProvider('dataProvisionTicket')]
     public function testProvisionTicket($productName, array $config, array $params, array $whmcsConfig, array $ticketInfo)
     {
         $this->setupConfig($config, $params);
@@ -283,7 +285,7 @@ class ServerProvisionerTest extends TestCase
         $this->assertEquals(true, true);
     }
 
-    public function dataProvisionTicket()
+    public static function dataProvisionTicket()
     {
         $opt = 'configoption';
         return [
@@ -346,7 +348,6 @@ class ServerProvisionerTest extends TestCase
 Product Name: $productName
 Billing ID: $billingId
 Hostname: $domain
-Root Password: $password
 $osLabel: $osName
 $memLabel: $memName
 $portLabel: $portName
