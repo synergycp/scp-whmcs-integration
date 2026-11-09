@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ master ]
 
+# Neither job writes to the repository; the deploy job uses its own R2 and
+# Slack credentials from secrets.
+permissions:
+  contents: read
+
 jobs:
   build:
 
