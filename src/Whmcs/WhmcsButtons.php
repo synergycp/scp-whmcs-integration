@@ -466,14 +466,31 @@ class WhmcsButtons
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="?<?php echo $_SERVER['QUERY_STRING'] ?>&login_client" target="_blank">As Client</a></li>
-                    <li><a href="?<?php echo $_SERVER['QUERY_STRING'] ?>&login_admin" target="_blank">As Administrator</a></li>
+                    <li><a href="<?php echo static::loginLinkHref('login_client', $_GET) ?>" target="_blank">As Client</a></li>
+                    <li><a href="<?php echo static::loginLinkHref('login_admin', $_GET) ?>" target="_blank">As Administrator</a></li>
                 </ul>
             </div>
         </div>
 
         <?php
 
+    }
+
+    /**
+     * Build an escaped href for the admin login dropdown that preserves the
+     * current query string and adds the given flag.
+     *
+     * @param string $flag
+     * @param array  $query the current request's query parameters
+     *
+     * @return string
+     */
+    public static function loginLinkHref($flag, array $query)
+    {
+        unset($query['login_client'], $query['login_admin']);
+        $query[$flag] = '';
+
+        return htmlspecialchars('?'.http_build_query($query), ENT_QUOTES, 'UTF-8');
     }
 
     /**
@@ -546,13 +563,26 @@ class WhmcsButtons
      */
     protected function transferTo($url, $linkText = 'SynergyCP')
     {
-        $this->exitWithMessage(sprintf(
-            '<script type="text/javascript">window.location.href="%s"</script>'.
+        $this->exitWithMessage(static::transferMarkup($url, $linkText));
+    }
+
+    /**
+     * Markup that redirects the browser to $url, with a fallback link.
+     *
+     * @param string $url
+     * @param string $linkText
+     *
+     * @return string
+     */
+    public static function transferMarkup($url, $linkText)
+    {
+        return sprintf(
+            '<script type="text/javascript">window.location.href=%s</script>'.
             'Transfer to <a href="%s">%s</a>.',
-            $url,
-            $url,
-            $linkText
-        ));
+            json_encode($url, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
+            htmlspecialchars($url, ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars($linkText, ENT_QUOTES, 'UTF-8')
+        );
     }
 
     /**
