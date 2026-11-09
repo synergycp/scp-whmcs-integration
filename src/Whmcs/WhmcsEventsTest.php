@@ -2,16 +2,16 @@
 
 namespace Scp\Whmcs\Whmcs;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+
 class WhmcsEventsTest extends \TestCase
 {
-  /**
-   * @dataProvider dataCreate
-   */
+  #[DataProvider('dataCreate')]
   public function testWipeProductDetails(string $input, string $expected) {
     $this->assertEquals($expected, WhmcsEvents::domainForTerminatedServer($input));
   }
 
-  public function dataCreate()
+  public static function dataCreate()
   {
     return [
       'with srv ID' => [

@@ -1,3 +1,13 @@
 #!/usr/bin/env sh
+# Run a command inside the project's PHP 8.3 toolchain image.
+set -e
 
-docker run --rm -v $(pwd)/:/root -w /root epcallan/php7-testing-phpunit:7.2-phpunit7 "$@"
+IMAGE="${SCP_WHMCS_PHP_IMAGE:-scp-whmcs-integration-php:8.3}"
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(dirname "$BIN_DIR")"
+
+if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+  docker build -q -t "$IMAGE" -f "$BIN_DIR/Dockerfile" "$BIN_DIR" >/dev/null
+fi
+
+exec docker run --rm -v "$ROOT_DIR":/app -w /app "$IMAGE" "$@"

@@ -12,9 +12,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        tools: composer:v2
+        coverage: none
 
     - name: Validate composer.json and composer.lock
       run: composer validate
@@ -39,19 +46,16 @@ jobs:
 
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Install Scp Lib dependencies
       if: steps.composer-cache-scp.outputs.cache-hit != 'true'
       run: |
         cd Scp
-        composer install --prefer-dist --no-progress --no-suggest
+        composer install --prefer-dist --no-progress
 
     - name: Run test suite
-      uses: php-actions/composer@v6
-      with:
-        php_version: 7.2
-        command: run-script test
+      run: ./bin/test.sh
 
   deploy:
     needs: build
