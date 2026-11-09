@@ -16,7 +16,9 @@ OUTDIR="$(mktemp -d)"
 trap 'rm -rf "$OUTDIR"' EXIT
 OUTFILE="$OUTDIR/synergycp.zip"
 
-zip -r "$OUTFILE" . -x "*.git*" "*.idea/*" "bin/*" ".composer/*" "*CLAUDE.md" "*.claude/*"
+zip -r "$OUTFILE" . -x "*.git*" "*.idea/*" "bin/*" ".composer/*" "*CLAUDE.md" "*.claude/*" \
+  "tests/*" "*Test.php" "*TestCase.php" "*phpunit.xml" "bootstrap/tests.php" "Scp/bin/*" \
+  "*.phpunit.result.cache" "DEVELOPMENT.md"
 
 aws s3 cp "$OUTFILE" \
   "s3://${R2_BUCKET}/bm/integration/whmcs/synergycp.zip" \
